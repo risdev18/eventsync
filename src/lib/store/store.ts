@@ -112,7 +112,11 @@ export function loadState(): AppState {
               ? 'ds2026'
               : mergedUsers[idx].branchId === 'branch-it'
               ? 'it2026'
-              : 'admin2026'),
+              : mergedUsers[idx].branchId === 'branch-aml'
+              ? 'aml2026'
+              : mergedUsers[idx].role === 'admin'
+              ? 'admin2026'
+              : 'student2026'),
         };
       }
     });

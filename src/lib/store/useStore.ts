@@ -65,9 +65,18 @@ export function useStore() {
   // Event actions
   const createEvent = useCallback(
     (eventData: Omit<CollegeEvent, 'id' | 'createdAt' | 'registeredCount'>) => {
+      // Strictly enforce that branch organizers create events ONLY for their own branch
+      const enforcedBranchId =
+        currentUser.role === 'admin'
+          ? eventData.branchId
+          : currentUser.branchId || eventData.branchId;
+
       const newId = `event-${Date.now()}`;
       const newEvent: CollegeEvent = {
         ...eventData,
+        branchId: enforcedBranchId,
+        organizerId: currentUser.id,
+        organizerName: currentUser.name,
         id: newId,
         createdAt: new Date().toISOString(),
         registeredCount: 0,
@@ -79,7 +88,7 @@ export function useStore() {
         userName: currentUser.name,
         userRole: currentUser.role,
         action: 'EVENT_CREATED',
-        details: `Created event "${newEvent.title}" with theme "${newEvent.theme.themeName}"`,
+        details: `Created event "${newEvent.title}" (${enforcedBranchId}) with theme "${newEvent.theme.themeName}"`,
         timestamp: new Date().toISOString(),
       };
 
@@ -96,18 +105,42 @@ export function useStore() {
 
   const updateEvent = useCallback(
     (id: string, updates: Partial<CollegeEvent>) => {
-      updateState((prev) => ({
-        ...prev,
-        events: prev.events.map((e) => (e.id === id ? { ...e, ...updates } : e)),
-      }));
+      updateState((prev) => {
+        const evt = prev.events.find((e) => e.id === id);
+        if (!evt) return prev;
+        if (
+          currentUser.role !== 'admin' &&
+          currentUser.branchId &&
+          evt.branchId !== currentUser.branchId &&
+          evt.organizerId !== currentUser.id
+        ) {
+          console.warn('Unauthorized update on event belonging to another branch');
+          return prev;
+        }
+        return {
+          ...prev,
+          events: prev.events.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+        };
+      });
     },
-    [updateState]
+    [currentUser, updateState]
   );
 
   const updateEventTheme = useCallback(
     (eventId: string, theme: EventTheme) => {
       updateState((prev) => {
         const evt = prev.events.find((e) => e.id === eventId);
+        if (!evt) return prev;
+        if (
+          currentUser.role !== 'admin' &&
+          currentUser.branchId &&
+          evt.branchId !== currentUser.branchId &&
+          evt.organizerId !== currentUser.id
+        ) {
+          console.warn('Unauthorized theme update on event belonging to another branch');
+          return prev;
+        }
+
         const newLog: AuditLog = {
           id: `log-${Date.now()}`,
           userId: currentUser.id,
@@ -631,6 +664,15 @@ export function useStore() {
       updateState((prev) => {
         const evt = prev.events.find((e) => e.id === eventId);
         if (!evt) return prev;
+        if (
+          currentUser.role !== 'admin' &&
+          currentUser.branchId &&
+          evt.branchId !== currentUser.branchId &&
+          evt.organizerId !== currentUser.id
+        ) {
+          console.warn('Unauthorized certificate settings update on event belonging to another branch');
+          return prev;
+        }
         const updatedCertificateSettings: EventCertificateSettings = {
           ...evt.certificateSettings,
           ...settings,
@@ -747,7 +789,9 @@ export function useStore() {
           ? 'it2026'
           : targetUser?.branchId === 'branch-aml'
           ? 'aml2026'
-          : 'admin2026');
+          : targetUser?.role === 'admin'
+          ? 'admin2026'
+          : 'student2026');
 
       return enteredPasscode.trim() === expected.trim();
     },
@@ -765,6 +809,18 @@ export function useStore() {
 
       const evt = state.events.find((e) => e.id === eventId);
       if (!evt) return { success: false, message: 'Event not found.' };
+
+      if (
+        currentUser.role !== 'admin' &&
+        currentUser.branchId &&
+        evt.branchId !== currentUser.branchId &&
+        evt.organizerId !== currentUser.id
+      ) {
+        return {
+          success: false,
+          message: 'Branch Restriction: You are not authorized to delete events belonging to another department.',
+        };
+      }
 
       updateState((prev) => ({
         ...prev,

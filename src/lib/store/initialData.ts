@@ -25,6 +25,7 @@ export const INITIAL_USERS: UserProfile[] = [
     year: '2nd Year',
     interests: ['Web Development', 'AI & ML', 'Hackathons', 'Design'],
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'student2026',
   },
   {
     id: 'user-arjun',
@@ -38,6 +39,7 @@ export const INITIAL_USERS: UserProfile[] = [
     year: '2nd Year',
     interests: ['Cybersecurity', 'Cloud Computing'],
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'student2026',
   },
   {
     id: 'user-organizer-it',
@@ -48,6 +50,7 @@ export const INITIAL_USERS: UserProfile[] = [
     phone: '+91 98765 43220',
     college: 'College of Engineering & Technology',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'it2026',
   },
   {
     id: 'user-organizer-aml',
@@ -58,6 +61,7 @@ export const INITIAL_USERS: UserProfile[] = [
     phone: '+91 98765 43221',
     college: 'College of Engineering & Technology',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'aml2026',
   },
   {
     id: 'user-organizer-ds',
@@ -68,6 +72,7 @@ export const INITIAL_USERS: UserProfile[] = [
     phone: '+91 98765 43230',
     college: 'College of Engineering & Technology',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'ds2026',
   },
   {
     id: 'user-admin',
@@ -77,6 +82,7 @@ export const INITIAL_USERS: UserProfile[] = [
     phone: '+91 98765 43299',
     college: 'College of Engineering & Technology',
     avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    securityPassword: 'admin2026',
   },
 ];
 

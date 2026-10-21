@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   MoveVertical,
   Type,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   CHATGPT_PROMPT_SUGGESTION,
@@ -115,6 +116,30 @@ export default function OrganizerCertificatesHubPage() {
     return <div className="p-8 text-center text-xs text-stone-500">Event not found.</div>;
   }
 
+  // Enforce branch organizer purview isolation
+  const isAuthorized =
+    currentUser.role === 'admin' ||
+    event.organizerId === currentUser.id ||
+    (currentUser.branchId && event.branchId === currentUser.branchId);
+
+  if (!isAuthorized) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center space-y-4 max-w-lg mx-auto my-12">
+        <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
+        <h2 className="text-lg font-bold text-stone-900">Branch Access Restricted</h2>
+        <p className="text-xs text-stone-600">
+          This event belongs to another branch ({event.branchId.replace('branch-', '').toUpperCase()}). As an {currentUser.branchId ? currentUser.branchId.replace('branch-', '').toUpperCase() : 'assigned'} faculty coordinator, you are only authorized to manage certificates for your own department.
+        </p>
+        <Link
+          href="/organizer/dashboard"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold"
+        >
+          Return to My Dashboard
+        </Link>
+      </div>
+    );
+  }
+
   const handleBulkGenerate = () => {
     const res = generateParticipationCertificates(event.id);
     if (res.count > 0) {
@@ -176,33 +201,7 @@ export default function OrganizerCertificatesHubPage() {
   const participationCerts = eventCerts.filter((c) => c.type === 'participation');
   const winnerCerts = eventCerts.filter((c) => c.type === 'winner');
 
-  if (!event) {
-    return <div className="p-8 text-center text-xs text-stone-500">Event not found.</div>;
-  }
 
-  // Enforce branch organizer purview isolation
-  const isAuthorized =
-    currentUser.role === 'admin' ||
-    event.organizerId === currentUser.id ||
-    (currentUser.branchId && event.branchId === currentUser.branchId);
-
-  if (!isAuthorized) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center space-y-4 max-w-lg mx-auto my-12">
-        <ShieldCheck className="w-12 h-12 text-red-500 mx-auto" />
-        <h2 className="text-lg font-bold text-stone-900">Branch Access Restricted</h2>
-        <p className="text-xs text-stone-600">
-          This event belongs to another branch ({event.branchId.replace('branch-', '').toUpperCase()}). You are only authorized to manage certificates for your branch.
-        </p>
-        <Link
-          href="/organizer/dashboard"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold"
-        >
-          Return to My Dashboard
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">

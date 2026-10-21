@@ -42,7 +42,7 @@ export default function CreateEventWizardPage() {
 
   // Form State
   const [title, setTitle] = useState('');
-  const [branchId, setBranchId] = useState(branches[0]?.id || 'branch-it');
+  const [branchId, setBranchId] = useState(currentUser.branchId || branches[0]?.id || 'branch-it');
   const [category, setCategory] = useState<EventCategory>('hackathon');
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
@@ -204,10 +204,11 @@ export default function CreateEventWizardPage() {
   };
 
   const handleCreateSubmit = () => {
+    const enforcedBranchId = currentUser.role === 'admin' ? branchId : (currentUser.branchId || branchId);
     const newEvent = createEvent({
       title: title || `${themeName} Challenge`,
       slug: (title || `${themeName} Challenge`).toLowerCase().replace(/\s+/g, '-'),
-      branchId,
+      branchId: enforcedBranchId,
       category,
       tagline: tagline || `The official ${themeName} themed competition`,
       description:
@@ -231,7 +232,7 @@ export default function CreateEventWizardPage() {
       registrationDeadline: new Date(registrationDeadline).toISOString(),
       organizerId: currentUser.id,
       organizerName: currentUser.name,
-      organizerContact: `${currentUser.email} | +91 98765 43220`,
+      organizerContact: `${currentUser.email} | ${currentUser.phone || '+91 98765 43220'}`,
       featured: true,
       theme: {
         id: `theme-${Date.now()}`,
@@ -370,18 +371,33 @@ export default function CreateEventWizardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-stone-700">Organizing Branch *</label>
-                <select
-                  value={branchId}
-                  onChange={(e) => setBranchId(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600 bg-white"
-                >
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} ({b.code})
-                    </option>
-                  ))}
-                </select>
+                <label className="text-xs font-semibold text-stone-700">Organizing Department *</label>
+                {currentUser.role === 'admin' ? (
+                  <select
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600 bg-white"
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.code})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 text-stone-900 text-xs font-bold flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                      <span>
+                        {branches.find((b) => b.id === (currentUser.branchId || branchId))?.name || 'Information Technology'} (
+                        {branches.find((b) => b.id === (currentUser.branchId || branchId))?.code || 'IT'})
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Locked to your department
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

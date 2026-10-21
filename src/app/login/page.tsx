@@ -16,29 +16,56 @@ import {
   Shield,
   ArrowRight,
   Sparkles,
+  AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchUser, users } = useStore();
+  const { switchUser, users, verifySecurityPassword } = useStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [hintMessage, setHintMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleDemoLogin = (userId: string, role: string) => {
-    switchUser(userId);
-    if (role === 'admin') router.push('/admin/dashboard');
-    else if (role === 'organizer') router.push('/organizer/dashboard');
-    else router.push('/student/dashboard');
+  const handleSelectPersona = (targetEmail: string, personaName: string, defaultCode: string) => {
+    setEmail(targetEmail);
+    setPassword('');
+    setErrorMessage('');
+    setHintMessage(`Selected: ${personaName}. Please enter password (default: ${defaultCode} or your custom password) below:`);
   };
 
   const handleCustomLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const matched = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (matched) {
-      handleDemoLogin(matched.id, matched.role);
+    setErrorMessage('');
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage('Please enter both your institutional email and account password.');
+      return;
+    }
+
+    const matched = users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
+    if (!matched) {
+      setErrorMessage('No registered user found with this email address.');
+      return;
+    }
+
+    const isPasswordValid = verifySecurityPassword(matched.id, password.trim());
+    if (!isPasswordValid) {
+      setErrorMessage('Access Denied: Incorrect password. Please try again.');
+      return;
+    }
+
+    // Authenticated! Switch user and navigate to respective portal
+    switchUser(matched.id);
+    if (matched.role === 'admin') {
+      router.push('/admin/dashboard');
+    } else if (matched.role === 'organizer') {
+      router.push('/organizer/dashboard');
     } else {
-      // Default to student
-      handleDemoLogin('user-riya', 'student');
+      router.push('/student/dashboard');
     }
   };
 
@@ -55,28 +82,64 @@ export default function LoginPage() {
             </div>
             <h1 className="text-2xl font-black text-stone-900 tracking-tight">Sign In to EventEase</h1>
             <p className="text-xs text-stone-500">
-              Access your student dashboard, branch organizer console, or administrative portal.
+              Department faculty coordinators, college deans, and student participants sign in here.
             </p>
           </div>
 
-          {/* Quick 1-Click Demo Login Personas */}
+          {/* Quick Select Persona Presets */}
           <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700 uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Instant 1-Click Capstone Demo Sign-In</span>
+              <span>Select College Role &amp; Enter Password</span>
             </div>
 
             <div className="space-y-1.5">
               <button
                 type="button"
-                onClick={() => handleDemoLogin('user-riya', 'student')}
+                onClick={() =>
+                  handleSelectPersona('ananya.roy@college.edu', 'Prof. Ananya Roy (IT Faculty Coordinator)', 'it2026')
+                }
+                className="w-full p-2.5 rounded-xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 flex items-center justify-between text-xs transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2 text-left">
+                  <UserCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-stone-900">IT Faculty: Prof. Ananya Roy</p>
+                    <p className="text-[10px] text-stone-400">IT Branch Counselor • Password: it2026</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleSelectPersona('rs.iyer@college.edu', 'Prof. R. S. Iyer (Data Science Lead)', 'ds2026')
+                }
+                className="w-full p-2.5 rounded-xl border border-stone-200 bg-white hover:border-blue-500 hover:bg-blue-50/50 flex items-center justify-between text-xs transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2 text-left">
+                  <UserCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-stone-900">DS Faculty: Prof. R. S. Iyer</p>
+                    <p className="text-[10px] text-stone-400">Data Science Datathon Lead • Password: ds2026</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleSelectPersona('riya.sharma@college.edu', 'Riya Sharma (Student)', 'student2026')
+                }
                 className="w-full p-2.5 rounded-xl border border-stone-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/50 flex items-center justify-between text-xs transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2 text-left">
                   <GraduationCap className="w-4 h-4 text-emerald-600 shrink-0" />
                   <div>
                     <p className="font-bold text-stone-900">Student: Riya Sharma</p>
-                    <p className="text-[10px] text-stone-400">Computer Science • 2nd Year</p>
+                    <p className="text-[10px] text-stone-400">CS 2nd Year • Password: student2026</p>
                   </div>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
@@ -84,29 +147,16 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleDemoLogin('user-organizer-it', 'organizer')}
-                className="w-full p-2.5 rounded-xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 flex items-center justify-between text-xs transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-2 text-left">
-                  <UserCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                  <div>
-                    <p className="font-bold text-stone-900">Organizer: Prof. Ananya Roy</p>
-                    <p className="text-[10px] text-stone-400">IT Branch Council Lead</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('user-admin', 'admin')}
+                onClick={() =>
+                  handleSelectPersona('admin@eventease.college.edu', 'Dr. Rajesh Verma (Super Admin / Dean)', 'admin2026')
+                }
                 className="w-full p-2.5 rounded-xl border border-stone-200 bg-white hover:border-purple-500 hover:bg-purple-50/50 flex items-center justify-between text-xs transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2 text-left">
                   <Shield className="w-4 h-4 text-purple-600 shrink-0" />
                   <div>
-                    <p className="font-bold text-stone-900">Super Admin: Dr. Rajesh Verma</p>
-                    <p className="text-[10px] text-stone-400">Dean of Student Affairs</p>
+                    <p className="font-bold text-stone-900">Dean / Admin: Dr. Rajesh Verma</p>
+                    <p className="text-[10px] text-stone-400">Dean of Student Affairs • Password: admin2026</p>
                   </div>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
@@ -114,23 +164,33 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-stone-200 w-full" />
-            <span className="bg-white px-3 text-[10px] uppercase font-bold text-stone-400">
-              Or with credentials
-            </span>
-          </div>
+          {hintMessage && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+              {hintMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleCustomLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-stone-700">College Email</label>
+              <label className="text-xs font-semibold text-stone-700">College Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
                 <input
                   type="email"
+                  required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrorMessage('');
+                  }}
                   placeholder="name@college.edu"
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600"
                 />
@@ -140,19 +200,30 @@ export default function LoginPage() {
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="text-xs font-semibold text-stone-700">Password</label>
-                <Link href="/login" className="text-[10px] text-emerald-600 hover:underline">
-                  Forgot password?
-                </Link>
+                <span className="text-[10px] text-stone-400">
+                  Secured Authentication
+                </span>
               </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrorMessage('');
+                  }}
+                  placeholder="Enter your security password..."
+                  className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-stone-400 hover:text-stone-700 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -160,7 +231,7 @@ export default function LoginPage() {
               type="submit"
               className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
             >
-              Sign In
+              Sign In to Portal
             </button>
           </form>
 

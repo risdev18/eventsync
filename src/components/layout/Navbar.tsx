@@ -188,20 +188,17 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Host Event CTA */}
-            <Link
-              href="/organizer/events/new"
-              onClick={() => {
-                if (currentUser.role === 'student') {
-                  switchRole('organizer');
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100/90 hover:bg-emerald-200 border border-emerald-300 shadow-xs hover:shadow transition-all cursor-pointer"
-              title="Organize an event for your branch"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-emerald-700" />
-              <span>+ Host Event</span>
-            </Link>
+            {/* Host Event CTA (Visible only to organizers and admins; students cannot host) */}
+            {(currentUser.role === 'organizer' || currentUser.role === 'admin') && (
+              <Link
+                href="/organizer/events/new"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100/90 hover:bg-emerald-200 border border-emerald-300 shadow-xs hover:shadow transition-all cursor-pointer"
+                title="Organize an event for your branch"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-emerald-700" />
+                <span>+ Host Event</span>
+              </Link>
+            )}
 
             {/* Dashboard CTA */}
             <Link
@@ -234,12 +231,16 @@ export function Navbar() {
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-200 p-2 z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-stone-200 p-2 z-50">
                   <div className="px-3 py-2 border-b border-stone-100">
                     <p className="text-xs font-semibold text-stone-900">{currentUser.name}</p>
                     <p className="text-[10px] text-stone-500 truncate">{currentUser.email}</p>
                     <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-stone-100 text-stone-700">
-                      Role: {currentUser.role}
+                      {currentUser.role === 'organizer'
+                        ? `${currentUser.branchId ? currentUser.branchId.replace('branch-', '').toUpperCase() : ''} Faculty Organizer`
+                        : currentUser.role === 'admin'
+                        ? 'Super Admin (Dean)'
+                        : 'Student Participant'}
                     </span>
                   </div>
 
@@ -252,14 +253,29 @@ export function Navbar() {
                       <LayoutDashboard className="w-3.5 h-3.5" />
                       Dashboard
                     </Link>
-                    <Link
-                      href="/student/profile"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 rounded-lg"
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      My Profile
-                    </Link>
+
+                    {currentUser.role === 'student' && (
+                      <Link
+                        href="/student/profile"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 rounded-lg"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        Student Profile
+                      </Link>
+                    )}
+
+                    {currentUser.role === 'organizer' && (
+                      <Link
+                        href="/organizer/events"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 rounded-lg"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        Managed Events
+                      </Link>
+                    )}
+
                     <Link
                       href="/login"
                       onClick={() => setUserDropdownOpen(false)}
@@ -306,19 +322,16 @@ export function Navbar() {
             </Link>
           ))}
           <div className="pt-2 border-t border-stone-100 space-y-2">
-            <Link
-              href="/organizer/events/new"
-              onClick={() => {
-                if (currentUser.role === 'student') {
-                  switchRole('organizer');
-                }
-                setMobileMenuOpen(false);
-              }}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 text-center"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>+ Host an Event</span>
-            </Link>
+            {(currentUser.role === 'organizer' || currentUser.role === 'admin') && (
+              <Link
+                href="/organizer/events/new"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 text-center"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Host an Event</span>
+              </Link>
+            )}
             <Link
               href={getDashboardLink()}
               onClick={() => setMobileMenuOpen(false)}
