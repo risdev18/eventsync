@@ -251,6 +251,7 @@ export interface Certificate {
   eventId: string;
   eventTitle: string;
   branchName: string;
+  collegeName?: string;
   recipientName: string;
   recipientEmail: string;
   recipientId?: string;

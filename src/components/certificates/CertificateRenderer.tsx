@@ -76,10 +76,10 @@ export function CertificateRenderer({
         }
       : {
           label: 'Official Participant',
-          gradient: 'from-emerald-400 via-teal-600 to-emerald-800',
+          gradient: 'from-emerald-400 via-teal-500 to-emerald-700',
           ribbon: 'from-emerald-700 to-teal-900',
           ring: 'ring-emerald-400/60',
-          num: 'Part',
+          num: '★',
         };
 
   const compiledCustomHtml = certificate.customTemplateHtml
@@ -96,7 +96,7 @@ export function CertificateRenderer({
         issueDate: new Date(certificate.issueDate).toLocaleDateString(),
         eventDate: certificate.eventDate,
         certificateNumber: certificate.certificateNumber,
-        collegeName: 'EventEase College of Engineering & Technology',
+        collegeName: certificate.collegeName || 'College of Engineering & Technology',
         signatory1Name: certificate.signatories[0]?.name || 'Prof. Ananya Roy',
         signatory1Title: certificate.signatories[0]?.title || 'Faculty Coordinator',
         signatory2Name: certificate.signatories[1]?.name || 'Dr. H. N. Suresh',
@@ -334,7 +334,7 @@ export function CertificateRenderer({
             <div className="flex items-center justify-center gap-2 mb-1">
               <Award className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.primaryColor }} />
               <p className="text-xs sm:text-sm font-bold tracking-widest uppercase opacity-90 font-serif">
-                EventEase College of Engineering & Technology
+                {certificate.collegeName || 'College of Engineering & Technology'}
               </p>
             </div>
             <p className="text-[10px] sm:text-xs opacity-70 tracking-wider">
@@ -398,9 +398,9 @@ export function CertificateRenderer({
             <div
               className={`w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br ${badgeConfig.gradient} ${badgeConfig.ring} ring-4 shadow-2xl flex flex-col items-center justify-center text-slate-950 font-black border-2 border-white/60 transform rotate-6`}
             >
-              <span className="text-base sm:text-2xl font-black leading-none">{badgeConfig.num}</span>
-              <span className="text-[7px] sm:text-[9px] uppercase tracking-tighter font-extrabold text-center px-1">
-                {isWinner ? 'Winner' : 'Verified'}
+              <span className="text-lg sm:text-2xl font-black leading-none">{badgeConfig.num}</span>
+              <span className="text-[7px] sm:text-[8px] uppercase tracking-wider font-extrabold text-center px-1">
+                {isWinner ? 'Winner' : 'Participant'}
               </span>
             </div>
             {/* Ribbon Tails */}

@@ -27,6 +27,7 @@ import {
   Image as ImageIcon,
   MoveVertical,
   Type,
+  Building2,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dateFormat';
 import {
@@ -37,7 +38,16 @@ import {
 
 export default function CreateEventWizardPage() {
   const router = useRouter();
-  const { branches, createEvent, currentUser, saveDraftEvent, loadDraftEvent, clearDraftEvent } = useStore();
+  const {
+    branches,
+    createEvent,
+    currentUser,
+    saveDraftEvent,
+    loadDraftEvent,
+    clearDraftEvent,
+    collegeName: globalCollegeName,
+    updateCollegeName,
+  } = useStore();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
   const [stepError, setStepError] = useState<string | null>(null);
@@ -108,9 +118,12 @@ export default function CreateEventWizardPage() {
   const [feeType, setFeeType] = useState<'per_team' | 'per_person'>('per_team');
   const [feeAmount, setFeeAmount] = useState(200);
   const [upiId, setUpiId] = useState('eventease@upi');
-  const [payeeName, setPayeeName] = useState('EventEase College Council');
+  const [payeeName, setPayeeName] = useState('Student Council');
 
   // Certificate Settings State
+  const [collegeNameInput, setCollegeNameInput] = useState<string>(
+    globalCollegeName || 'College of Engineering & Technology'
+  );
   const [signatory1Name, setSignatory1Name] = useState(currentUser.name || 'Prof. Ananya Roy');
   const [signatory1Title, setSignatory1Title] = useState('Faculty Coordinator');
   const [signatory2Name, setSignatory2Name] = useState('Dr. H. N. Suresh');
@@ -329,6 +342,7 @@ export default function CreateEventWizardPage() {
       signatory1Title,
       signatory2Name,
       signatory2Title,
+      collegeNameInput,
     };
     saveDraftEvent(draft);
     setDraftToast(`Draft saved successfully at ${new Date().toLocaleTimeString()}! You can resume anytime.`);
@@ -372,6 +386,7 @@ export default function CreateEventWizardPage() {
     if (savedDraft.signatory1Title) setSignatory1Title(savedDraft.signatory1Title);
     if (savedDraft.signatory2Name) setSignatory2Name(savedDraft.signatory2Name);
     if (savedDraft.signatory2Title) setSignatory2Title(savedDraft.signatory2Title);
+    if (savedDraft.collegeNameInput) setCollegeNameInput(savedDraft.collegeNameInput);
 
     setSavedDraft(null);
     setDraftToast('Draft restored successfully! You can now continue editing.');
@@ -384,6 +399,9 @@ export default function CreateEventWizardPage() {
   };
 
   const handleCreateSubmit = () => {
+    if (collegeNameInput.trim()) {
+      updateCollegeName(collegeNameInput.trim());
+    }
     const enforcedBranchId = currentUser.role === 'admin' ? branchId : (currentUser.branchId || branchId);
     const newEvent = createEvent({
       title: title || `${themeName} Challenge`,
@@ -450,7 +468,7 @@ export default function CreateEventWizardPage() {
       certificateSettings: {
         enableParticipation: true,
         attendanceRequirementPct: 100,
-        collegeName: 'EventEase College of Engineering & Technology',
+        collegeName: collegeNameInput.trim() || globalCollegeName || 'College of Engineering & Technology',
         templateMode: certTemplateMode,
         photoTemplateUrl: certTemplateMode === 'photo_template' ? photoTemplateUrl : undefined,
         photoSettings:
@@ -1146,7 +1164,7 @@ export default function CreateEventWizardPage() {
                       type="text"
                       value={payeeName}
                       onChange={(e) => setPayeeName(e.target.value)}
-                      placeholder="e.g. EventEase College Council"
+                      placeholder="e.g. Student Council / College Gymkhana"
                       className="w-full p-2.5 rounded-xl border border-stone-200 text-xs outline-none focus:border-emerald-600"
                     />
                   </div>
@@ -1167,6 +1185,26 @@ export default function CreateEventWizardPage() {
               <p className="text-xs text-stone-500">
                 Choose how certificates will be generated. You can upload a certificate photo template created with ChatGPT (DALL-E) or Canva (no code required), or use our dynamic procedural theme engine!
               </p>
+            </div>
+
+            {/* Issuing College / University Authority Input */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/90 space-y-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <label className="text-xs font-bold text-stone-900">
+                  Issuing College / Institution Name
+                </label>
+              </div>
+              <p className="text-[11px] text-stone-500">
+                Enter your college or institution name. You have complete authority to set this name — it will be prominently displayed on all certificate headers, verification links, and generated PDFs.
+              </p>
+              <input
+                type="text"
+                value={collegeNameInput}
+                onChange={(e) => setCollegeNameInput(e.target.value)}
+                placeholder="e.g. Pune Institute of Computer Technology, MIT-WPU, IIT Bombay"
+                className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-stone-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+              />
             </div>
 
             {/* Mode Selector Cards */}
@@ -1718,7 +1756,7 @@ export default function CreateEventWizardPage() {
                           issueDate: new Date().toLocaleDateString(),
                           eventDate: 'May 10 - May 12, 2026',
                           certificateNumber: 'CERT-DEMO-2026-001',
-                          collegeName: 'EventEase College of Engineering & Technology',
+                          collegeName: collegeNameInput.trim() || globalCollegeName || 'College of Engineering & Technology',
                           signatory1Name: signatory1Name,
                           signatory1Title: signatory1Title,
                           signatory2Name: signatory2Name,

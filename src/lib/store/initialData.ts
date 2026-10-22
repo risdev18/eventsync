@@ -221,7 +221,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
       feeType: 'per_team',
       feeAmount: 200,
       upiId: 'eventease@upi',
-      payeeName: 'EventEase College IT Council',
+      payeeName: 'Student IT Council',
       qrImageUrl: '/images/upi-qr.png',
       paymentInstructions:
         'Please scan using any UPI App (GPay, PhonePe, Paytm). Enter your 12-digit UTR/Transaction ID and attach the payment screenshot for instant organizer verification.',
@@ -229,7 +229,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
     certificateSettings: {
       enableParticipation: true,
       attendanceRequirementPct: 100,
-      collegeName: 'EventEase College of Engineering & Technology',
+      collegeName: 'College of Engineering & Technology',
       signatories: [
         { name: 'Prof. Ananya Roy', title: 'Faculty Coordinator, IT' },
         { name: 'Dr. H. N. Suresh', title: 'Head of Department, IT' },
@@ -315,7 +315,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
     certificateSettings: {
       enableParticipation: true,
       attendanceRequirementPct: 100,
-      collegeName: 'EventEase College of Engineering & Technology',
+      collegeName: 'College of Engineering & Technology',
       signatories: [
         { name: 'Prof. Vikram Kumar', title: 'Faculty Coordinator, AML' },
         { name: 'Dr. Meena Swaminathan', title: 'Head of Department, AML' },
@@ -399,7 +399,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
     certificateSettings: {
       enableParticipation: true,
       attendanceRequirementPct: 100,
-      collegeName: 'EventEase College of Engineering & Technology',
+      collegeName: 'College of Engineering & Technology',
       signatories: [
         { name: 'Prof. Sneha Deshmukh', title: 'Faculty Coordinator, CS' },
         { name: 'Dr. K. R. Raghavan', title: 'Dean of Computing' },
@@ -483,7 +483,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
     certificateSettings: {
       enableParticipation: true,
       attendanceRequirementPct: 100,
-      collegeName: 'EventEase College of Engineering & Technology',
+      collegeName: 'College of Engineering & Technology',
       signatories: [
         { name: 'Prof. R. S. Iyer', title: 'Faculty Coordinator, Data Science' },
         { name: 'Dr. Anita Deshpande', title: 'Dean of Research & Innovation' },
@@ -565,7 +565,7 @@ export const INITIAL_EVENTS: CollegeEvent[] = [
     certificateSettings: {
       enableParticipation: true,
       attendanceRequirementPct: 100,
-      collegeName: 'EventEase College of Engineering & Technology',
+      collegeName: 'College of Engineering & Technology',
       signatories: [
         { name: 'Prof. Harish Nair', title: 'Faculty Convener' },
         { name: 'Dr. S. K. Murthy', title: 'Principal' },

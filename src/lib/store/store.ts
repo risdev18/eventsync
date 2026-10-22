@@ -31,6 +31,7 @@ const STORAGE_KEY = 'eventease_v2_fresh_demo';
 
 export interface AppState {
   currentUserId: string;
+  collegeName: string;
   users: UserProfile[];
   branches: Branch[];
   events: CollegeEvent[];
@@ -47,6 +48,7 @@ export interface AppState {
 export function getDefaultState(): AppState {
   return {
     currentUserId: 'user-riya', // Default logged-in demo user (Student Riya Sharma)
+    collegeName: 'College of Engineering & Technology',
     users: INITIAL_USERS,
     branches: INITIAL_BRANCHES,
     events: INITIAL_EVENTS,
@@ -159,9 +161,15 @@ export function loadState(): AppState {
       Array.isArray(parsed.payments) ? parsed.payments : INITIAL_PAYMENTS
     ).filter((p: PaymentSubmission) => p.userId !== 'user-riya');
 
+    const effectiveCollegeName =
+      parsed.collegeName && !parsed.collegeName.startsWith('EventEase')
+        ? parsed.collegeName
+        : 'College of Engineering & Technology';
+
     inMemoryState = {
       ...getDefaultState(),
       ...parsed,
+      collegeName: effectiveCollegeName,
       users: mergedUsers,
       branches: mergedBranches,
       events: mergedEvents,

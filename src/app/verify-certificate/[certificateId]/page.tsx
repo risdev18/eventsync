@@ -43,7 +43,7 @@ export default function DirectCertificateVerificationPage() {
                 <CheckCircle2 className="w-7 h-7 text-emerald-600" />
                 <div>
                   <h2 className="font-bold text-stone-900 text-lg">Verified Authentic Certificate</h2>
-                  <p className="text-xs text-stone-500">Official record in EventEase college repository</p>
+                  <p className="text-xs text-stone-500">Official record in verifiable institution repository</p>
                 </div>
               </div>
 
@@ -80,7 +80,7 @@ export default function DirectCertificateVerificationPage() {
 
               <div className="flex justify-between border-b border-stone-100 pb-2.5">
                 <span className="text-stone-500 font-medium">Issuing Authority:</span>
-                <span>Department of {cert.branchName} • EventEase College</span>
+                <span className="font-semibold text-stone-800">Department of {cert.branchName} • {cert.collegeName || 'College of Engineering & Technology'}</span>
               </div>
 
               <div className="flex justify-between">

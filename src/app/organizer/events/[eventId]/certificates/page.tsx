@@ -30,6 +30,7 @@ import {
   MoveVertical,
   Type,
   ShieldAlert,
+  Building2,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils/dateFormat';
 import {
@@ -41,7 +42,15 @@ import {
 export default function OrganizerCertificatesHubPage() {
   const params = useParams();
   const eventId = params.eventId as string;
-  const { events, certificates, generateParticipationCertificates, updateEventCertificateSettings, currentUser } = useStore();
+  const {
+    events,
+    certificates,
+    generateParticipationCertificates,
+    updateEventCertificateSettings,
+    updateCollegeName,
+    collegeName: globalCollegeName,
+    currentUser,
+  } = useStore();
 
   const event = events.find((e) => e.id === eventId || e.slug === eventId);
   const eventCerts = certificates.filter((c) => c.eventId === eventId);
@@ -86,6 +95,10 @@ export default function OrganizerCertificatesHubPage() {
   );
   const [certPhotoUploadSuccess, setCertPhotoUploadSuccess] = useState<boolean>(false);
   const certFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [collegeNameInput, setCollegeNameInput] = useState<string>(
+    event?.certificateSettings?.collegeName || globalCollegeName || 'College of Engineering & Technology'
+  );
 
   const [customChatGPTTemplate, setCustomChatGPTTemplate] = useState<string>(
     event?.certificateSettings?.customChatGPTTemplate || CHATGPT_TEMPLATE_PRESETS.royal_gold.template
@@ -164,9 +177,13 @@ export default function OrganizerCertificatesHubPage() {
   };
 
   const handleSaveCertificateTemplate = () => {
+    if (collegeNameInput.trim()) {
+      updateCollegeName(collegeNameInput.trim());
+    }
     updateEventCertificateSettings(
       event.id,
       {
+        collegeName: collegeNameInput.trim() || globalCollegeName,
         templateMode,
         photoTemplateUrl: templateMode === 'photo_template' ? photoTemplateUrl : undefined,
         photoSettings:
@@ -188,13 +205,7 @@ export default function OrganizerCertificatesHubPage() {
       true
     );
     setSaveSuccessMsg(
-      `Certificate format updated to ${
-        templateMode === 'photo_template'
-          ? 'Uploaded ChatGPT Photo Template'
-          : templateMode === 'chatgpt_custom'
-          ? 'Custom ChatGPT HTML/CSS Template'
-          : 'Automatic Dynamic Theme'
-      } and applied to all certificates!`
+      `Certificate settings & issuing institution updated to "${collegeNameInput.trim() || globalCollegeName}" and applied to all certificates!`
     );
     setTimeout(() => setSaveSuccessMsg(''), 4000);
   };
@@ -285,6 +296,27 @@ export default function OrganizerCertificatesHubPage() {
               <Check className="w-3.5 h-3.5" />
               <span>Save &amp; Apply to All Certificates</span>
             </button>
+          </div>
+
+          {/* College / Institution Name Authority Setting */}
+          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-purple-600" />
+              <label htmlFor="collegeNameInput" className="text-xs font-bold text-stone-900">
+                Issuing College / University Name
+              </label>
+            </div>
+            <p className="text-[11px] text-stone-500">
+              Enter your college or institution name. You have complete authority over this name — it will be prominently displayed on all certificate headers, verification links, and generated PDFs.
+            </p>
+            <input
+              id="collegeNameInput"
+              type="text"
+              value={collegeNameInput}
+              onChange={(e) => setCollegeNameInput(e.target.value)}
+              placeholder="e.g. Pune Institute of Computer Technology, MIT-WPU, IIT Bombay"
+              className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-stone-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+            />
           </div>
 
           {/* Mode Switcher */}
@@ -826,7 +858,7 @@ export default function OrganizerCertificatesHubPage() {
                         issueDate: new Date().toLocaleDateString(),
                         eventDate: `${new Date(event.startDate).toLocaleDateString()} - ${new Date(event.endDate).toLocaleDateString()}`,
                         certificateNumber: 'CERT-DEMO-2026-001',
-                        collegeName: 'EventEase College of Engineering & Technology',
+                        collegeName: collegeNameInput.trim() || event.certificateSettings?.collegeName || globalCollegeName || 'College of Engineering & Technology',
                         signatory1Name: event.certificateSettings.signatories[0]?.name || 'Faculty Coordinator',
                         signatory1Title: event.certificateSettings.signatories[0]?.title || 'Coordinator',
                         signatory2Name: event.certificateSettings.signatories[1]?.name || 'Head of Department',

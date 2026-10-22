@@ -154,7 +154,8 @@ export async function generateCertificatePDF(cert: Certificate): Promise<jsPDF> 
   // 3. College Header
   doc.setTextColor(200, 200, 210);
   doc.setFontSize(10);
-  doc.text('EVENTEASE COLLEGE OF ENGINEERING & TECHNOLOGY', width / 2, 23, { align: 'center' });
+  const collegeHeader = (cert.collegeName || 'College of Engineering & Technology').toUpperCase();
+  doc.text(collegeHeader, width / 2, 23, { align: 'center' });
 
   doc.setFontSize(8);
   doc.setTextColor(160, 160, 175);

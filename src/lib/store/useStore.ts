@@ -701,6 +701,7 @@ export function useStore() {
             eventId: event.id,
             eventTitle: event.title,
             branchName: event.branchId.replace('branch-', '').toUpperCase(),
+            collegeName: event.certificateSettings?.collegeName || state.collegeName || 'College of Engineering & Technology',
             recipientName: member.name,
             recipientEmail: member.email,
             teamName: p.teamName,
@@ -775,6 +776,7 @@ export function useStore() {
             eventId: event.id,
             eventTitle: event.title,
             branchName: event.branchId.replace('branch-', '').toUpperCase(),
+            collegeName: event.certificateSettings?.collegeName || state.collegeName || 'College of Engineering & Technology',
             recipientName: att.participantName,
             recipientEmail: att.participantEmail,
             teamName: att.teamName,
@@ -846,6 +848,7 @@ export function useStore() {
             c.eventId === eventId
               ? {
                   ...c,
+                  collegeName: updatedCertificateSettings.collegeName || c.collegeName || prev.collegeName,
                   photoTemplateUrl: isPhoto ? updatedCertificateSettings.photoTemplateUrl : undefined,
                   photoSettings: isPhoto ? updatedCertificateSettings.photoSettings : undefined,
                   customTemplateHtml: isHtml ? updatedCertificateSettings.customChatGPTTemplate : undefined,
@@ -1194,9 +1197,34 @@ export function useStore() {
     [updateState]
   );
 
+  const updateCollegeName = useCallback(
+    (newCollegeName: string) => {
+      const trimmed = newCollegeName.trim();
+      if (!trimmed) return;
+      updateState((prev) => ({
+        ...prev,
+        collegeName: trimmed,
+        events: prev.events.map((e) => ({
+          ...e,
+          certificateSettings: {
+            ...e.certificateSettings,
+            collegeName: trimmed,
+          },
+        })),
+        certificates: prev.certificates.map((c) => ({
+          ...c,
+          collegeName: trimmed,
+        })),
+      }));
+    },
+    [updateState]
+  );
+
   return {
     isHydrated,
     currentUser,
+    collegeName: state.collegeName || 'College of Engineering & Technology',
+    updateCollegeName,
     switchUser,
     switchRole,
     users: state.users,

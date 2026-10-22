@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { CollegeEvent, Certificate } from '@/lib/types';
 import { CertificateRenderer } from './CertificateRenderer';
 import { formatDate } from '@/lib/utils/dateFormat';
-import { Award, Sparkles, X, CheckCircle2, Trophy, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Award, Sparkles, X, CheckCircle2, Trophy, ArrowRight, ShieldCheck, Building2, Check } from 'lucide-react';
+import { useStore } from '@/lib/store/useStore';
 
 interface SampleCertificateModalProps {
   event: CollegeEvent;
@@ -18,7 +19,19 @@ export function SampleCertificateModal({
   isOpen,
   onClose,
 }: SampleCertificateModalProps) {
+  const { collegeName: globalCollegeName, updateCollegeName } = useStore();
   const [certType, setCertType] = useState<'participation' | 'winner'>('participation');
+  const [collegeInput, setCollegeInput] = useState(
+    event.certificateSettings?.collegeName || globalCollegeName || 'College of Engineering & Technology'
+  );
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleCollegeChange = (val: string) => {
+    setCollegeInput(val);
+    updateCollegeName(val);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2000);
+  };
 
   if (!isOpen) return null;
 
@@ -31,6 +44,7 @@ export function SampleCertificateModal({
     eventId: event.id,
     eventTitle: event.title,
     branchName: event.branchId ? event.branchId.replace('branch-', '').toUpperCase() : 'CSE',
+    collegeName: collegeInput || event.certificateSettings?.collegeName || globalCollegeName || 'College of Engineering & Technology',
     recipientName: 'Riya Sharma (Student Sample)',
     recipientEmail: 'riya.sharma@college.edu',
     teamName: 'Team Phoenix',
@@ -127,6 +141,33 @@ export function SampleCertificateModal({
           <div className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
             <ShieldCheck className="w-4 h-4" />
             <span>Includes Cryptographic QR Verification & Digital Signatures</span>
+          </div>
+        </div>
+
+        {/* Editable College Name Authority Input */}
+        <div className="px-5 py-2.5 bg-stone-950/90 border-b border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-stone-300 font-medium w-full sm:w-auto">
+            <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="whitespace-nowrap text-stone-300 font-bold">Your College Name:</span>
+            <input
+              type="text"
+              value={collegeInput}
+              onChange={(e) => handleCollegeChange(e.target.value)}
+              placeholder="e.g. Pune Institute of Computer Technology"
+              className="bg-stone-900 border border-stone-700 focus:border-amber-400 text-white px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none flex-1 sm:w-80 transition-all placeholder:text-stone-600"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            {savedSuccess ? (
+              <span className="text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" />
+                Updated live on certificate
+              </span>
+            ) : (
+              <span className="text-[11px] text-stone-400">
+                You have full authority to type your college name here
+              </span>
+            )}
           </div>
         </div>
 

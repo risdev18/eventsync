@@ -25,7 +25,7 @@ export default function ThemeStudioPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.eventId as string;
-  const { events, updateEventTheme, currentUser } = useStore();
+  const { events, updateEventTheme, currentUser, collegeName } = useStore();
 
   const event = events.find((e) => e.id === eventId || e.slug === eventId);
 
@@ -589,7 +589,7 @@ export default function ThemeStudioPage() {
                 >
                   <div>
                     <p className="text-[10px] uppercase tracking-widest opacity-70">
-                      EventEase College of Engineering
+                      {event?.certificateSettings?.collegeName || collegeName || 'College of Engineering & Technology'}
                     </p>
                     <h2
                       className="text-base sm:text-lg font-black uppercase tracking-wide mt-1"

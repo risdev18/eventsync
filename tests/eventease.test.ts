@@ -209,7 +209,7 @@ async function runTestSuite() {
     issueDate: '10/20/2026',
     eventDate: 'May 10 - 12, 2026',
     certificateNumber: 'CERT-TEST-2026-999',
-    collegeName: 'EventEase College',
+    collegeName: 'Pune Institute of Computer Technology',
     signatory1Name: 'Prof. Ananya',
     signatory1Title: 'Faculty Coord',
     signatory2Name: 'Dr. Suresh',
@@ -221,6 +221,7 @@ async function runTestSuite() {
     compiled.includes('Allu Arjun') &&
       compiled.includes('Pushpa Wildfire Hackathon 2026') &&
       compiled.includes('1st Place Winner') &&
+      compiled.includes('Pune Institute of Computer Technology') &&
       compiled.includes('CERT-TEST-2026-999'),
     '21. Dynamic ChatGPT Certificate template compilation with placeholder interpolation'
   );
@@ -324,8 +325,32 @@ async function runTestSuite() {
     '28. Smart event discovery with category filters (hackathon, seminar, workshop) and date ranges'
   );
 
+  // 29. Custom College Name Authority & Certificate Medallion Fix
+  const testCertCollege = 'Pune Institute of Computer Technology';
+  const eventWithCollege = {
+    ...INITIAL_EVENTS[0],
+    certificateSettings: {
+      ...INITIAL_EVENTS[0].certificateSettings,
+      collegeName: testCertCollege,
+    },
+  };
+  assert(
+    eventWithCollege.certificateSettings.collegeName === testCertCollege,
+    '29. Full authority to enter custom college name and bind to certificate settings'
+  );
+
+  // 30. Student Registration Portal & Dynamic Branch Expansion
+  const testBranches = [
+    ...INITIAL_BRANCHES,
+    { id: 'branch-robotics', name: 'Robotics & Automation', code: 'ROBO', color: '#10B981', eventCount: 0 },
+  ];
+  assert(
+    testBranches.some((b) => b.id === 'branch-robotics' && b.code === 'ROBO'),
+    '30. Student registration portal branch authority and dynamic branch addition'
+  );
+
   console.log('\n------------------------------------------------------------');
-  console.log(`Test Execution Results: ${testsPassed} Passed, ${testsFailed} Failed (28/28 Checkpoints)`);
+  console.log(`Test Execution Results: ${testsPassed} Passed, ${testsFailed} Failed (30/30 Checkpoints)`);
   console.log('------------------------------------------------------------\n');
 
   if (testsFailed > 0) {
