@@ -24,6 +24,7 @@ import {
   BookmarkCheck,
   Filter,
   GraduationCap,
+  PlusCircle,
 } from 'lucide-react';
 import { CollegeEvent } from '@/lib/types';
 import { SampleCertificateModal } from '@/components/certificates/SampleCertificateModal';
@@ -183,6 +184,14 @@ export default function HomePage() {
                   >
                     <Layers className="w-3.5 h-3.5 text-stone-500" />
                     <span>View Academic Branches</span>
+                  </Link>
+
+                  <Link
+                    href="/organizer/events/new"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-bold border border-purple-300 shadow-2xs transition-all"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 text-purple-700" />
+                    <span>+ Host a Hackathon</span>
                   </Link>
                 </div>
 

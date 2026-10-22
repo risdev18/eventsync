@@ -200,17 +200,15 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Host Event CTA (Visible only to organizers and admins; students cannot host) */}
-            {(currentUser.role === 'organizer' || currentUser.role === 'admin') && (
-              <Link
-                href="/organizer/events/new"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100/90 hover:bg-emerald-200 border border-emerald-300 shadow-xs hover:shadow transition-all cursor-pointer"
-                title="Organize an event for your branch"
-              >
-                <PlusCircle className="w-3.5 h-3.5 text-emerald-700" />
-                <span>+ Host Event</span>
-              </Link>
-            )}
+            {/* Host Hackathon CTA */}
+            <Link
+              href="/organizer/events/new"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-purple-900 bg-purple-100 hover:bg-purple-200 border border-purple-300 shadow-xs hover:shadow transition-all cursor-pointer"
+              title="Host a new Hackathon or Technical Event"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-purple-700" />
+              <span>+ Host Hackathon</span>
+            </Link>
 
             {/* Dashboard CTA */}
             <Link
@@ -434,16 +432,14 @@ export function Navbar() {
 
           {/* Bottom Portal Action Buttons */}
           <div className="pt-2 border-t border-stone-100 space-y-2">
-            {(currentUser.role === 'organizer' || currentUser.role === 'admin') && (
-              <Link
-                href="/organizer/events/new"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 text-center"
-              >
-                <PlusCircle className="w-4 h-4 text-emerald-700" />
-                <span>+ Host a New Event</span>
-              </Link>
-            )}
+            <Link
+              href="/organizer/events/new"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-purple-100 text-purple-900 border border-purple-300 text-center"
+            >
+              <PlusCircle className="w-4 h-4 text-purple-700" />
+              <span>+ Host a Hackathon / Event</span>
+            </Link>
 
             <Link
               href={getDashboardLink()}
