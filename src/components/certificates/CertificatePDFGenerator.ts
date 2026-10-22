@@ -152,8 +152,8 @@ export async function generateCertificatePDF(cert: Certificate): Promise<jsPDF> 
   });
 
   // 3. College Header
-  doc.setTextColor(200, 200, 210);
-  doc.setFontSize(10);
+  doc.setTextColor(245, 215, 130);
+  doc.setFontSize(13);
   const collegeHeader = (cert.collegeName || 'College of Engineering & Technology').toUpperCase();
   doc.text(collegeHeader, width / 2, 23, { align: 'center' });
 
@@ -174,9 +174,9 @@ export async function generateCertificatePDF(cert: Certificate): Promise<jsPDF> 
   doc.text(`• THEME: ${theme.themeName.toUpperCase()} •`, width / 2, 51, { align: 'center' });
 
   // 6. Presentation text
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(190, 195, 205);
-  doc.text('This is proudly presented to', width / 2, 63, { align: 'center' });
+  doc.text('THIS CERTIFICATE IS PROUDLY PRESENTED TO', width / 2, 63, { align: 'center' });
 
   // 7. Recipient Name
   doc.setFontSize(26);
@@ -189,28 +189,21 @@ export async function generateCertificatePDF(cert: Certificate): Promise<jsPDF> 
   doc.line(width / 2 - 45, 82, width / 2 + 45, 82);
 
   // 8. Body Text
-  doc.setFontSize(11);
-  doc.setTextColor(200, 205, 215);
+  doc.setFontSize(10.5);
+  doc.setTextColor(215, 220, 230);
 
   if (isWinner && cert.placement) {
     const placeWord = cert.placement === 1 ? '1st Position' : cert.placement === 2 ? '2nd Position' : '3rd Position';
-    doc.text(`has distinguished themselves and secured the`, width / 2, 93, { align: 'center' });
-    doc.setFontSize(14);
-    doc.setTextColor(accentColor);
-    doc.text(`${placeWord} (Winner)`, width / 2, 101, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setTextColor(200, 205, 215);
-    doc.text(`in the ${cert.eventTitle} organized by ${cert.branchName}`, width / 2, 109, { align: 'center' });
+    doc.text(`for securing ${placeWord} in "${cert.eventTitle}" during ${cert.eventDate}`, width / 2, 93, { align: 'center' });
+    doc.text(`at ${cert.collegeName || 'College of Engineering & Technology'}`, width / 2, 100, { align: 'center' });
   } else {
     doc.text(
-      `for active participation and demonstrating commendable technical innovation in`,
+      `for participating in "${cert.eventTitle}" during ${cert.eventDate}`,
       width / 2,
       93,
       { align: 'center' }
     );
-    doc.setFontSize(13);
-    doc.setTextColor(255, 255, 255);
-    doc.text(cert.eventTitle, width / 2, 102, { align: 'center' });
+    doc.text(`at ${cert.collegeName || 'College of Engineering & Technology'}`, width / 2, 100, { align: 'center' });
   }
 
   // 9. Event Details / Dates

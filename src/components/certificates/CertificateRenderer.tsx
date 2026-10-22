@@ -331,37 +331,39 @@ export function CertificateRenderer({
         <div className="relative z-10 h-full flex flex-col justify-between text-center">
           {/* Header */}
           <div>
+            {/* Prominent College / University Name */}
             <div className="flex items-center justify-center gap-2 mb-1">
-              <Award className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.primaryColor }} />
-              <p className="text-xs sm:text-sm font-bold tracking-widest uppercase opacity-90 font-serif">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-amber-300" />
+              <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-widest uppercase font-serif text-amber-200 drop-shadow">
                 {certificate.collegeName || 'College of Engineering & Technology'}
-              </p>
+              </h2>
             </div>
-            <p className="text-[10px] sm:text-xs opacity-70 tracking-wider">
+            <p className="text-[10px] sm:text-xs opacity-75 tracking-wider uppercase font-medium">
               Department of {certificate.branchName} • Annual Capstone Engineering Series 2026
             </p>
 
-            <h1
-              className="text-xl sm:text-3xl md:text-4xl font-extrabold uppercase tracking-wide mt-2 sm:mt-3 font-serif"
-              style={{ color: theme.primaryColor }}
-            >
-              {isWinner ? 'Certificate of Achievement' : 'Certificate of Participation'}
-            </h1>
-
-            <div className="inline-flex items-center gap-1.5 mt-1 px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>Theme: {theme.themeName}</span>
+            <div className="mt-2 sm:mt-3">
+              <h1
+                className="text-xl sm:text-3xl md:text-4xl font-black uppercase tracking-wider font-serif"
+                style={{ color: theme.primaryColor }}
+              >
+                {isWinner ? 'Certificate of Achievement' : 'Certificate of Participation'}
+              </h1>
+              <div
+                className="w-48 sm:w-72 h-0.5 mx-auto mt-1 rounded-full opacity-80"
+                style={{ backgroundColor: theme.primaryColor }}
+              />
             </div>
           </div>
 
           {/* Presentation to Recipient */}
           <div className="my-auto py-2">
-            <p className="text-xs sm:text-sm opacity-80 font-serif italic mb-1">
-              This is proudly presented to
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest font-serif opacity-80 mb-1">
+              This certificate is proudly presented to
             </p>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-2 font-serif">
+            <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-2 font-serif drop-shadow-md">
               {certificate.recipientName}
-            </h2>
+            </h3>
 
             {/* Decorative Gold Divider */}
             <div className="flex items-center justify-center gap-2 max-w-xs mx-auto mb-2">
@@ -376,41 +378,41 @@ export function CertificateRenderer({
               />
             </div>
 
-            {isWinner ? (
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-xs sm:text-sm opacity-90">
-                  for securing <strong className="text-amber-400 font-bold">{badgeConfig.label}</strong> in
-                </span>
-                <span className="text-sm sm:text-lg font-bold text-white max-w-lg">
-                  {certificate.eventTitle}
+            {/* Official Certification Body Text Matching Collegiate Sample */}
+            <p className="text-xs sm:text-sm max-w-xl mx-auto opacity-95 leading-relaxed font-serif px-2">
+              {isWinner ? (
+                <>
+                  for securing <strong className="text-amber-400 font-bold">{badgeConfig.label}</strong> in the{' '}
+                  <strong className="text-white font-semibold">&ldquo;{certificate.eventTitle}&rdquo;</strong> during{' '}
+                  {certificate.eventDate} at{' '}
+                  <strong className="text-amber-200 font-bold underline decoration-amber-400/50 underline-offset-2">
+                    {certificate.collegeName || 'College of Engineering & Technology'}
+                  </strong>.
+                </>
+              ) : (
+                <>
+                  for participating in the{' '}
+                  <strong className="text-white font-semibold">&ldquo;{certificate.eventTitle}&rdquo;</strong> during{' '}
+                  {certificate.eventDate} at{' '}
+                  <strong className="text-amber-200 font-bold underline decoration-amber-400/50 underline-offset-2">
+                    {certificate.collegeName || 'College of Engineering & Technology'}
+                  </strong>.
+                </>
+              )}
+            </p>
+
+            {/* Team ID & Theme Metadata Chips */}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-3 text-[10px] sm:text-xs">
+              <div className="px-3 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/15">
+                <span className="opacity-70 font-mono">TEAM: </span>
+                <span className="font-bold text-white">{certificate.teamName || 'Solo Participant'}</span>
+              </div>
+              <div className="px-3 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/15">
+                <span className="opacity-70 font-mono">THEME: </span>
+                <span className="font-bold" style={{ color: theme.primaryColor }}>
+                  {theme.themeName}
                 </span>
               </div>
-            ) : (
-              <p className="text-xs sm:text-sm max-w-lg mx-auto opacity-90">
-                for active participation, commendable technical innovation, and exceptional performance in{' '}
-                <strong className="text-white font-semibold">{certificate.eventTitle}</strong>
-              </p>
-            )}
-          </div>
-
-          {/* Embossed Medallion Seal Floating */}
-          <div className="absolute top-5 right-5 sm:top-8 sm:right-8 flex flex-col items-center select-none pointer-events-none">
-            <div
-              className={`w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br ${badgeConfig.gradient} ${badgeConfig.ring} ring-4 shadow-2xl flex flex-col items-center justify-center text-slate-950 font-black border-2 border-white/60 transform rotate-6`}
-            >
-              <span className="text-lg sm:text-2xl font-black leading-none">{badgeConfig.num}</span>
-              <span className="text-[7px] sm:text-[8px] uppercase tracking-wider font-extrabold text-center px-1">
-                {isWinner ? 'Winner' : 'Participant'}
-              </span>
-            </div>
-            {/* Ribbon Tails */}
-            <div className="flex gap-1 -mt-2">
-              <div
-                className={`w-3 sm:w-4 h-6 sm:h-8 bg-gradient-to-b ${badgeConfig.ribbon} shadow-md transform -rotate-12 rounded-b`}
-              />
-              <div
-                className={`w-3 sm:w-4 h-6 sm:h-8 bg-gradient-to-b ${badgeConfig.ribbon} shadow-md transform rotate-12 rounded-b`}
-              />
             </div>
           </div>
 

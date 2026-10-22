@@ -172,8 +172,8 @@ export function SampleCertificateModal({
         </div>
 
         {/* Certificate Render Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-stone-950/40 flex items-center justify-center">
-          <div className="w-full max-w-3xl transform scale-[0.88] sm:scale-100 origin-top sm:origin-center transition-transform">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-stone-950/70 flex flex-col items-center justify-start">
+          <div className="w-full max-w-3xl my-auto">
             <CertificateRenderer certificate={sampleCertificate} showDownloadButton={false} />
           </div>
         </div>
