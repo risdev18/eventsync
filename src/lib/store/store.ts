@@ -27,7 +27,7 @@ import {
   INITIAL_AUDIT_LOGS,
 } from './initialData';
 
-const STORAGE_KEY = 'eventease_v1_data';
+const STORAGE_KEY = 'eventease_v2_fresh_demo';
 
 export interface AppState {
   currentUserId: string;
@@ -135,11 +135,39 @@ export function loadState(): AppState {
       }
     });
 
+    // 3. Ensure custom & default branches are preserved
+    const mergedBranches = Array.isArray(parsed.branches) ? [...parsed.branches] : [...INITIAL_BRANCHES];
+    INITIAL_BRANCHES.forEach((initB) => {
+      if (!mergedBranches.some((b) => b.id === initB.id)) {
+        mergedBranches.push(initB);
+      }
+    });
+
+    // 4. Guarantee Riya Sharma (the demo presenter) starts with clean 0 registrations
+    const cleanRegistrations = (
+      Array.isArray(parsed.registrations) ? parsed.registrations : INITIAL_REGISTRATIONS
+    ).filter(
+      (r: Registration) =>
+        r.userId !== 'user-riya' &&
+        !r.members?.some((m) => m.email?.toLowerCase() === 'riya.sharma@college.edu')
+    );
+    const cleanTickets = (Array.isArray(parsed.tickets) ? parsed.tickets : INITIAL_TICKETS).filter(
+      (t: Ticket) =>
+        t.userId !== 'user-riya' && t.participantEmail?.toLowerCase() !== 'riya.sharma@college.edu'
+    );
+    const cleanPayments = (
+      Array.isArray(parsed.payments) ? parsed.payments : INITIAL_PAYMENTS
+    ).filter((p: PaymentSubmission) => p.userId !== 'user-riya');
+
     inMemoryState = {
       ...getDefaultState(),
       ...parsed,
       users: mergedUsers,
+      branches: mergedBranches,
       events: mergedEvents,
+      registrations: cleanRegistrations,
+      tickets: cleanTickets,
+      payments: cleanPayments,
     };
     return inMemoryState as AppState;
   } catch (err) {

@@ -20,33 +20,42 @@ import {
   AlertCircle,
   QrCode,
   Sparkles,
+  Award,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { SampleCertificateModal } from '@/components/certificates/SampleCertificateModal';
 
 export default function DynamicRegistrationPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.eventId as string;
-  const { events, currentUser, createRegistration } = useStore();
+  const { events, currentUser, createRegistration, registrations, branches } = useStore();
 
   const event = events.find((e) => e.id === eventId || e.slug === eventId);
 
   // Stepper state
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  const [showSampleCert, setShowSampleCert] = useState(false);
 
   // Form State
   const [isTeam, setIsTeam] = useState<boolean>(true);
   const [teamName, setTeamName] = useState<string>('Team Phoenix');
   const [teamSize, setTeamSize] = useState<number>(2);
 
+  const getLeaderBranch = () => {
+    if (!currentUser.branchId) return 'CS';
+    const found = branches.find((b) => b.id === currentUser.branchId);
+    return found ? found.code : currentUser.branchId.replace('branch-', '').toUpperCase();
+  };
+
   const [members, setMembers] = useState([
     {
       name: currentUser.name || 'Riya Sharma',
       email: currentUser.email || 'riya.sharma@college.edu',
       usn: currentUser.usn || '1MS22CS098',
-      branch: 'CS',
-      year: '2nd Year',
-      phone: '+91 98765 43210',
+      branch: getLeaderBranch(),
+      year: currentUser.year || '2nd Year',
+      phone: currentUser.phone || '+91 98765 43210',
       isLeader: true,
     },
     {
@@ -59,6 +68,29 @@ export default function DynamicRegistrationPage() {
       isLeader: false,
     },
   ]);
+
+  // Keep leader details synced with currentUser (e.g. when switched or newly registered)
+  React.useEffect(() => {
+    if (currentUser) {
+      const leaderBranch = currentUser.branchId
+        ? (branches.find((b) => b.id === currentUser.branchId)?.code ||
+            currentUser.branchId.replace('branch-', '').toUpperCase())
+        : 'CS';
+
+      setMembers((prev) => [
+        {
+          name: currentUser.name,
+          email: currentUser.email,
+          usn: currentUser.usn || prev[0]?.usn || '1MS22CS098',
+          branch: leaderBranch,
+          year: currentUser.year || prev[0]?.year || '2nd Year',
+          phone: currentUser.phone || prev[0]?.phone || '+91 98765 43210',
+          isLeader: true,
+        },
+        ...prev.slice(1),
+      ]);
+    }
+  }, [currentUser, branches]);
 
   // Payment State
   const [transactionRef, setTransactionRef] = useState<string>('UPI-908129384712');
@@ -82,6 +114,28 @@ export default function DynamicRegistrationPage() {
   const theme = event.theme;
   const regSettings = event.registrationSettings;
   const paySettings = event.paymentSettings;
+
+  // Validation checks for eligibility & availability
+  const now = new Date();
+  const isDeadlinePassed = Boolean(
+    event.registrationDeadline && now > new Date(event.registrationDeadline)
+  );
+  const isFullCapacity = event.registeredCount >= event.capacity;
+  const existingUserRegistration = registrations.find(
+    (r) =>
+      r.eventId === event.id &&
+      r.status !== 'cancelled' &&
+      r.status !== 'rejected' &&
+      (r.userId === currentUser.id ||
+        r.members.some(
+          (m) =>
+            m.email.toLowerCase() === currentUser.email.toLowerCase() ||
+            (currentUser.usn && m.usn.toLowerCase() === currentUser.usn.toLowerCase())
+        ))
+  );
+  const isRegistrationBlocked = Boolean(
+    existingUserRegistration || isDeadlinePassed || isFullCapacity
+  );
 
   // Calculate dynamic amount
   const calculatedFee = !paySettings.isPaid
@@ -184,9 +238,11 @@ export default function DynamicRegistrationPage() {
         spread: 70,
         origin: { y: 0.6 },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg('Registration failed. Please check form details.');
+      const message =
+        err instanceof Error ? err.message : 'Registration failed. Please check form details.';
+      setErrorMsg(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -218,8 +274,19 @@ export default function DynamicRegistrationPage() {
               Register for {event.title}
             </h1>
 
-            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 backdrop-blur-md">
-              Theme: {theme.themeName}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 backdrop-blur-md">
+                Theme: {theme.themeName}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSampleCert(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/25 transition-all cursor-pointer backdrop-blur-md shadow-sm"
+                style={{ color: theme.textColor }}
+              >
+                <Award className="w-3.5 h-3.5 text-amber-300" />
+                <span>Preview Sample Certificate</span>
+              </button>
             </div>
           </div>
 
@@ -330,6 +397,74 @@ export default function DynamicRegistrationPage() {
             </div>
           </div>
 
+          {/* Existing Registration Banner */}
+          {existingUserRegistration && (
+            <div className="p-4 rounded-2xl bg-amber-950/80 border border-amber-500 text-amber-100 text-xs space-y-3 backdrop-blur-md">
+              <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+                <span>You Are Already Registered for This Event</span>
+              </div>
+              <p className="leading-relaxed">
+                Our records show an active registration for <strong>{event.title}</strong> under ID{' '}
+                <strong className="font-mono text-white bg-black/40 px-2 py-0.5 rounded">
+                  {existingUserRegistration.id}
+                </strong>{' '}
+                (Status:{' '}
+                <span className="capitalize font-bold text-amber-200">
+                  {existingUserRegistration.status}
+                </span>
+                ). Duplicate registrations are blocked to preserve quota availability for fellow students.
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {existingUserRegistration.status === 'confirmed' && (
+                  <Link
+                    href="/student/tickets"
+                    className="px-3.5 py-2 rounded-xl bg-amber-400 text-stone-950 font-bold hover:bg-amber-300 transition-colors flex items-center gap-1.5"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    View Entry Tickets
+                  </Link>
+                )}
+                <Link
+                  href="/student/registrations"
+                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors"
+                >
+                  Go to My Registrations
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Registration Deadline Passed Banner */}
+          {!existingUserRegistration && isDeadlinePassed && (
+            <div className="p-4 rounded-2xl bg-red-950/80 border border-red-500 text-red-200 text-xs flex items-center gap-3 backdrop-blur-md">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <div>
+                <strong className="block font-bold text-sm text-red-100">Registration Has Closed</strong>
+                <span>
+                  The registration cutoff for this event was{' '}
+                  <strong>{new Date(event.registrationDeadline).toLocaleString()}</strong>. No new entries
+                  are being accepted.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Full Capacity Banner */}
+          {!existingUserRegistration && !isDeadlinePassed && isFullCapacity && (
+            <div className="p-4 rounded-2xl bg-amber-950/80 border border-amber-500 text-amber-200 text-xs flex items-center gap-3 backdrop-blur-md">
+              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+              <div>
+                <strong className="block font-bold text-sm text-amber-100">
+                  Event at Full Capacity ({event.capacity}/{event.capacity} Seats Filled)
+                </strong>
+                <span>
+                  All available seats for this event have been reserved. Registration is currently locked.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Error Banner */}
           {errorMsg && (
             <div className="p-3 rounded-xl bg-red-950/80 border border-red-500 text-red-200 text-xs flex items-center gap-2">
@@ -354,6 +489,19 @@ export default function DynamicRegistrationPage() {
                   <p className="text-xs opacity-70">
                     Set up your team name and permitted team size for {event.title}.
                   </p>
+                </div>
+
+                {/* Profile Auto-Fill Confirmation Banner */}
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="opacity-90">
+                      Registering as: <strong>{currentUser.name}</strong> ({currentUser.usn || 'Verified Student'} • {members[0]?.branch})
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
+                    Profile Auto-Filled ✓
+                  </span>
                 </div>
 
                 {/* Team or Individual Toggle */}
@@ -426,16 +574,25 @@ export default function DynamicRegistrationPage() {
                 {/* Continue button */}
                 <button
                   type="button"
+                  disabled={isRegistrationBlocked}
                   onClick={() => {
                     if (validateStep1()) setCurrentStep(2);
                   }}
-                  className="w-full py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  className="w-full py-3 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   style={{
                     backgroundColor: theme.primaryColor,
                     color: theme.backgroundColor,
                   }}
                 >
-                  <span>Continue to Member Details</span>
+                  <span>
+                    {existingUserRegistration
+                      ? 'Already Registered'
+                      : isDeadlinePassed
+                      ? 'Registration Closed'
+                      : isFullCapacity
+                      ? 'Capacity Reached'
+                      : 'Continue to Member Details'}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -750,6 +907,13 @@ export default function DynamicRegistrationPage() {
             )}
           </div>
         </div>
+
+        {/* Sample Certificate Modal */}
+        <SampleCertificateModal
+          event={event}
+          isOpen={showSampleCert}
+          onClose={() => setShowSampleCert(false)}
+        />
       </ThemedContainer>
     </div>
   );

@@ -17,7 +17,10 @@ import {
   LogOut,
   ChevronDown,
   PlusCircle,
+  GraduationCap,
+  UserCheck,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -43,6 +46,7 @@ export function Navbar() {
     { label: 'Home', href: '/' },
     { label: 'Explore Events', href: '/events' },
     { label: 'Branches', href: '/branches' },
+    { label: 'Student Registration', href: '/student-registration', highlight: true },
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'Verify Certificate', href: '/verify-certificate' },
   ];
@@ -114,13 +118,21 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                     isActive
                       ? 'text-emerald-700 bg-emerald-50 font-semibold'
+                      : link.highlight
+                      ? 'text-emerald-700 hover:text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 font-semibold border border-emerald-200/80 shadow-2xs'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
                 >
-                  {link.label}
+                  {link.highlight && <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />}
+                  <span>{link.label}</span>
+                  {link.highlight && (
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-600 text-white uppercase tracking-wider">
+                      New
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -165,8 +177,8 @@ export function Navbar() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-semibold">{n.title}</span>
-                            <span className="text-[10px] text-stone-400">
-                              {new Date(n.createdAt).toLocaleDateString()}
+                            <span suppressHydrationWarning className="text-[10px] text-stone-400">
+                              {formatDate(n.createdAt)}
                             </span>
                           </div>
                           <p className="text-[11px] text-stone-600 mt-1 line-clamp-2">{n.message}</p>
@@ -245,6 +257,27 @@ export function Navbar() {
                   </div>
 
                   <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        window.dispatchEvent(new CustomEvent('eventease_open_role_switcher'));
+                      }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors"
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Switch Presenter Persona</span>
+                    </button>
+
+                    <Link
+                      href="/student-registration"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50 rounded-lg"
+                    >
+                      <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Student Registration Portal</span>
+                    </Link>
+
                     <Link
                       href={getDashboardLink()}
                       onClick={() => setUserDropdownOpen(false)}
@@ -290,19 +323,30 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Actions: Persona quick trigger + Menu button */}
+          <div className="flex md:hidden items-center gap-1.5">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('eventease_open_role_switcher'))}
+              className="p-2 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors cursor-pointer"
+              title="Switch Persona / Account"
+            >
+              <UserCheck className="w-4 h-4 text-emerald-700" />
+            </button>
+
             <Link
               href={getDashboardLink()}
-              className="p-2 rounded-xl text-emerald-600 bg-emerald-50"
+              className="p-2 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+              title="Dashboard"
             >
-              <LayoutDashboard className="w-5 h-5" />
+              <LayoutDashboard className="w-4 h-4" />
             </Link>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100"
+              className="p-2 rounded-xl text-stone-700 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -310,34 +354,103 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-stone-200 bg-white px-4 pt-3 pb-6 space-y-2 animate-in fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="md:hidden border-t border-stone-200 bg-white px-4 pt-3 pb-6 space-y-3 animate-in fade-in shadow-xl">
+          {/* Active Persona Profile Card & Quick Switcher */}
+          <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                  alt={currentUser.name}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500/40 shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-stone-900 truncate">{currentUser.name}</p>
+                  <p className="text-[10px] text-stone-500 truncate">
+                    {currentUser.role === 'admin'
+                      ? 'Dean (Admin)'
+                      : currentUser.role === 'organizer'
+                      ? `${currentUser.branchId ? currentUser.branchId.replace('branch-', '').toUpperCase() : ''} Teacher`
+                      : 'Student'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent('eventease_open_role_switcher'));
+                }}
+                className="shrink-0 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs flex items-center gap-1 cursor-pointer"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Switch Role</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Student Registration Portal Quick Button */}
+          <Link
+            href="/student-registration"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-emerald-950 font-bold text-xs shadow-2xs"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <GraduationCap className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-extrabold text-stone-900">Student Registration Portal</p>
+                <p className="text-[10px] text-stone-500 font-normal">One-time registration for hackathons &amp; fests</p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-600 text-white">
+              Open
+            </span>
+          </Link>
+
+          {/* Navigation Links */}
+          <div className="space-y-1 pt-1">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-emerald-50 text-emerald-800'
+                      : 'text-stone-700 hover:bg-stone-100 hover:text-stone-900'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Bottom Portal Action Buttons */}
           <div className="pt-2 border-t border-stone-100 space-y-2">
             {(currentUser.role === 'organizer' || currentUser.role === 'admin') && (
               <Link
                 href="/organizer/events/new"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 text-center"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 text-center"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>+ Host an Event</span>
+                <PlusCircle className="w-4 h-4 text-emerald-700" />
+                <span>+ Host a New Event</span>
               </Link>
             )}
+
             <Link
               href={getDashboardLink()}
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-xl text-sm font-semibold bg-emerald-600 text-white text-center"
+              className="block px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white text-center shadow-sm"
             >
-              Open Dashboard ({currentUser.role})
+              Open Dashboard ({currentUser.role === 'organizer' ? 'Teacher Portal' : currentUser.role === 'admin' ? 'Dean Portal' : 'Student Dashboard'})
             </Link>
           </div>
         </div>

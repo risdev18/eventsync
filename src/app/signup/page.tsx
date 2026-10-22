@@ -11,20 +11,30 @@ import { Calendar, User, Mail, Hash, Lock, CheckCircle2 } from 'lucide-react';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { branches } = useStore();
+  const { branches, registerStudent } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [usn, setUsn] = useState('');
-  const [branch, setBranch] = useState('branch-cs');
-  const [password, setPassword] = useState('');
+  const [branch, setBranch] = useState(branches[0]?.id || 'branch-cs');
+  const [password, setPassword] = useState('student2026');
   const [registered, setRegistered] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim() || !email.trim() || !usn.trim()) return;
+
+    registerStudent({
+      name,
+      email,
+      usn,
+      branchId: branch,
+      securityPassword: password || 'student2026',
+    });
+
     setRegistered(true);
     setTimeout(() => {
       router.push('/student/dashboard');
-    }, 1500);
+    }, 1200);
   };
 
   return (

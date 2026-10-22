@@ -8,6 +8,7 @@ import { downloadCertificatePDF } from '@/components/certificates/CertificatePDF
 import { exportCertificatesZip } from '@/components/certificates/ZipExporter';
 import { Award, Download, Eye, ShieldCheck, Archive, Share2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate } from '@/lib/utils/dateFormat';
 
 export default function StudentCertificatesPage() {
   const { currentUser, certificates } = useStore();
@@ -126,7 +127,7 @@ export default function StudentCertificatesPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Issued Date:</span>
-                      <span>{new Date(cert.issueDate).toLocaleDateString()}</span>
+                      <span suppressHydrationWarning>{formatDate(cert.issueDate)}</span>
                     </div>
                   </div>
 

@@ -31,6 +31,7 @@ import {
   Type,
   ShieldAlert,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
 import {
   CHATGPT_PROMPT_SUGGESTION,
   CHATGPT_TEMPLATE_PRESETS,
@@ -908,7 +909,7 @@ export default function OrganizerCertificatesHubPage() {
                         {cert.awardCategory}
                       </span>
                     </td>
-                    <td className="p-3 text-stone-500">{new Date(cert.issueDate).toLocaleDateString()}</td>
+                    <td suppressHydrationWarning className="p-3 text-stone-500">{formatDate(cert.issueDate)}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <button

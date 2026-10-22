@@ -32,7 +32,21 @@ import {
   KeyRound,
   Trash2,
   AlertTriangle,
+  Zap,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  CartesianGrid,
+} from 'recharts';
 
 export default function OrganizerDashboardPage() {
   const {
@@ -133,6 +147,35 @@ export default function OrganizerDashboardPage() {
     .filter((p) => p.status === 'verified')
     .reduce((sum, p) => sum + p.amount, 0);
   const totalAttendance = scopedAttendance.length;
+
+  // Analytics Chart Data: Registrations vs Attendance per event
+  const eventComparisonData = useMemo(() => {
+    return activeEvents.map((evt) => {
+      const regCount = scopedRegistrations.filter((r) => r.eventId === evt.id && r.status !== 'cancelled').length;
+      const attCount = scopedAttendance.filter((a) => a.eventId === evt.id).length;
+      return {
+        name: evt.title.split('—')[0].trim().slice(0, 16),
+        fullName: evt.title,
+        Registrations: regCount,
+        Attendance: attCount,
+      };
+    });
+  }, [activeEvents, scopedRegistrations, scopedAttendance]);
+
+  // Analytics Chart Data: Participation Status Breakdown
+  const statusPieData = useMemo(() => {
+    const checkedInCount = scopedAttendance.length;
+    const pendingReviewCount = scopedPendingPayments.length;
+    const confirmedCount = scopedRegistrations.filter((r) => r.status === 'confirmed').length;
+    const awaitingCheckIn = Math.max(0, confirmedCount - checkedInCount);
+
+    const data = [
+      { name: 'Checked In', value: checkedInCount, color: '#10B981' },
+      { name: 'Awaiting Check-In', value: awaitingCheckIn, color: '#3B82F6' },
+      { name: 'Pending Review', value: pendingReviewCount, color: '#F59E0B' },
+    ];
+    return data.filter((d) => d.value > 0);
+  }, [scopedAttendance, scopedPendingPayments, scopedRegistrations]);
 
   // Filtered Participants List
   const filteredRegistrations = useMemo(() => {
@@ -379,6 +422,84 @@ export default function OrganizerDashboardPage() {
         </div>
       </div>
 
+      {/* QUICK ACTIONS BAR */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link
+          href="/organizer/events/new"
+          className="p-4 rounded-2xl bg-white border border-stone-200 hover:border-emerald-500 hover:shadow-md transition-all flex items-center gap-3 group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <PlusCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-stone-900 text-xs">Create Event</h4>
+            <p className="text-[11px] text-stone-400">Launch 7-step wizard</p>
+          </div>
+        </Link>
+
+        <Link
+          href={`/organizer/events/${activeEvents[0]?.id || 'event-it-hackathon'}/attendance`}
+          className="p-4 rounded-2xl bg-white border border-stone-200 hover:border-purple-500 hover:shadow-md transition-all flex items-center gap-3 group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <QrCode className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-stone-900 text-xs">Scan Attendance</h4>
+            <p className="text-[11px] text-stone-400">QR ticket check-in</p>
+          </div>
+        </Link>
+
+        <button
+          onClick={exportParticipantsCSV}
+          className="p-4 rounded-2xl bg-white border border-stone-200 hover:border-blue-500 hover:shadow-md transition-all flex items-center gap-3 text-left group cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Download className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-stone-900 text-xs">Export Roster</h4>
+            <p className="text-[11px] text-stone-400">Download CSV report</p>
+          </div>
+        </button>
+
+        <Link
+          href={`/organizer/events/${activeEvents[0]?.id || 'event-it-hackathon'}/certificates`}
+          className="p-4 rounded-2xl bg-white border border-stone-200 hover:border-amber-500 hover:shadow-md transition-all flex items-center gap-3 group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Award className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-stone-900 text-xs">Certificates</h4>
+            <p className="text-[11px] text-stone-400">Batch generate &amp; ZIP</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* TASKS REQUIRING ATTENTION ALERT */}
+      {scopedPendingPayments.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <div>
+              <p className="font-bold text-stone-900">
+                Action Required: {scopedPendingPayments.length} Pending Payment{scopedPendingPayments.length > 1 ? 's' : ''} Awaiting Review
+              </p>
+              <p className="text-stone-500 text-[11px]">
+                Students have submitted UPI transaction references and screenshots. Confirm them below to generate entrance QR tickets.
+              </p>
+            </div>
+          </div>
+          <a
+            href="#payment-queue"
+            className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition-colors"
+          >
+            Review Queue ({scopedPendingPayments.length})
+          </a>
+        </div>
+      )}
+
       {/* 2. EVENT SCOPE FILTER BAR (Restricted strictly to myEvents of this branch) */}
       {myEvents.length > 1 ? (
         <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -491,9 +612,98 @@ export default function OrganizerDashboardPage() {
         </div>
       </div>
 
-      {/* 4. SCOPED PENDING PAYMENT REVIEW QUEUE */}
+      {/* 4. REGISTRATION AND ATTENDANCE CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Bar Chart: Registrations vs Attendance */}
+        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-stone-900 text-sm flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-600" />
+                <span>Registrations vs. Verified Attendance</span>
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Comparison of total student teams registered versus verified physical ticket check-ins.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+              {branchDisplay} Scoped
+            </span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={eventComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                <Bar dataKey="Registrations" fill="#10B981" radius={[6, 6, 0, 0]} name="Registered Teams" />
+                <Bar dataKey="Attendance" fill="#8B5CF6" radius={[6, 6, 0, 0]} name="Checked-In Attendees" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Donut / Pie Chart: Status Breakdown */}
+        <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <h3 className="font-bold text-stone-900 text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-purple-600" />
+              <span>Participant Status Breakdown</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Live ratio of checked-in vs confirmed vs pending reviews.
+            </p>
+          </div>
+
+          <div className="h-44 w-full flex items-center justify-center">
+            {statusPieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusPieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={68}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {statusPieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '11px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-xs text-stone-400 text-center">No participant data to display</div>
+            )}
+          </div>
+
+          <div className="space-y-1.5 pt-2 border-t border-stone-100 text-xs">
+            {statusPieData.map((item) => (
+              <div key={item.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-stone-600 font-medium">{item.name}</span>
+                </div>
+                <span className="font-bold text-stone-900">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 5. SCOPED PENDING PAYMENT REVIEW QUEUE */}
       {scopedPendingPayments.length > 0 && (
-        <div className="bg-amber-50/60 rounded-3xl border border-amber-200 p-6 space-y-4">
+        <div id="payment-queue" className="bg-amber-50/60 rounded-3xl border border-amber-200 p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-amber-600" />

@@ -28,6 +28,7 @@ import {
   MoveVertical,
   Type,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
 import {
   CHATGPT_PROMPT_SUGGESTION,
   CHATGPT_TEMPLATE_PRESETS,
@@ -36,9 +37,13 @@ import {
 
 export default function CreateEventWizardPage() {
   const router = useRouter();
-  const { branches, createEvent, currentUser } = useStore();
+  const { branches, createEvent, currentUser, saveDraftEvent, loadDraftEvent, clearDraftEvent } = useStore();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [draftToast, setDraftToast] = useState<string | null>(null);
+  const [savedDraft, setSavedDraft] = useState<any | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -52,6 +57,26 @@ export default function CreateEventWizardPage() {
   const [startDate, setStartDate] = useState('2026-05-10T09:00');
   const [endDate, setEndDate] = useState('2026-05-12T18:00');
   const [registrationDeadline, setRegistrationDeadline] = useState('2026-05-09T23:59');
+
+  // Check for saved draft on mount
+  React.useEffect(() => {
+    const existingDraft = loadDraftEvent();
+    if (existingDraft && existingDraft.title) {
+      setSavedDraft(existingDraft);
+    }
+  }, [loadDraftEvent]);
+
+  // Warn on browser refresh or close if user has typed something
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (title.trim()) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [title]);
 
   // Theme State
   const [themeName, setThemeName] = useState('Harry Potter');
@@ -203,6 +228,161 @@ export default function CreateEventWizardPage() {
     }
   };
 
+  const validateStep = (s: number): boolean => {
+    setStepError(null);
+    if (s === 1) {
+      if (!title.trim()) {
+        setStepError('Event Title is required. Please provide a descriptive title.');
+        return false;
+      }
+      if (!venue.trim()) {
+        setStepError('Venue location is required.');
+        return false;
+      }
+      if (!capacity || capacity < 1) {
+        setStepError('Participant capacity must be at least 1.');
+        return false;
+      }
+    } else if (s === 3) {
+      const start = new Date(startDate).getTime();
+      const end = new Date(endDate).getTime();
+      const deadline = new Date(registrationDeadline).getTime();
+      if (isNaN(start) || isNaN(end) || isNaN(deadline)) {
+        setStepError('Please enter valid dates and times for event schedule.');
+        return false;
+      }
+      if (end < start) {
+        setStepError('Event End Date cannot be earlier than Event Start Date.');
+        return false;
+      }
+      if (deadline > start) {
+        setStepError('Registration Deadline must be before or on Event Start Date.');
+        return false;
+      }
+    } else if (s === 4) {
+      if (minTeamSize < 1) {
+        setStepError('Minimum team size must be at least 1.');
+        return false;
+      }
+      if (maxTeamSize < minTeamSize) {
+        setStepError('Maximum team size cannot be less than minimum team size.');
+        return false;
+      }
+    } else if (s === 5) {
+      if (isPaid) {
+        if (!feeAmount || feeAmount <= 0) {
+          setStepError('Please specify a valid registration fee amount greater than ₹0.');
+          return false;
+        }
+        if (!upiId.trim() || !upiId.includes('@')) {
+          setStepError('Please provide a valid college council UPI ID (e.g. council@upi).');
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const handleSaveDraft = () => {
+    const draft = {
+      title,
+      branchId,
+      category,
+      tagline,
+      description,
+      venue,
+      mode,
+      capacity,
+      startDate,
+      endDate,
+      registrationDeadline,
+      themeName,
+      bannerUrl,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      surfaceColor,
+      textColor,
+      accentColor,
+      fontFamily,
+      minTeamSize,
+      maxTeamSize,
+      allowIndividual,
+      requireTeam,
+      isPaid,
+      feeType,
+      feeAmount,
+      upiId,
+      payeeName,
+      certTemplateMode,
+      photoTemplateUrl,
+      photoTextColor,
+      photoNamePositionY,
+      photoNameFontSize,
+      photoFontFamily,
+      photoShowQrCode,
+      photoQrPosition,
+      photoShowSignatures,
+      photoShowEventTitle,
+      customChatGPTTemplate,
+      signatory1Name,
+      signatory1Title,
+      signatory2Name,
+      signatory2Title,
+    };
+    saveDraftEvent(draft);
+    setDraftToast(`Draft saved successfully at ${new Date().toLocaleTimeString()}! You can resume anytime.`);
+    setTimeout(() => setDraftToast(null), 4000);
+  };
+
+  const handleResumeDraft = () => {
+    if (!savedDraft) return;
+    if (savedDraft.title) setTitle(savedDraft.title);
+    if (savedDraft.branchId) setBranchId(savedDraft.branchId);
+    if (savedDraft.category) setCategory(savedDraft.category);
+    if (savedDraft.tagline) setTagline(savedDraft.tagline);
+    if (savedDraft.description) setDescription(savedDraft.description);
+    if (savedDraft.venue) setVenue(savedDraft.venue);
+    if (savedDraft.mode) setMode(savedDraft.mode);
+    if (savedDraft.capacity) setCapacity(savedDraft.capacity);
+    if (savedDraft.startDate) setStartDate(savedDraft.startDate);
+    if (savedDraft.endDate) setEndDate(savedDraft.endDate);
+    if (savedDraft.registrationDeadline) setRegistrationDeadline(savedDraft.registrationDeadline);
+    if (savedDraft.themeName) setThemeName(savedDraft.themeName);
+    if (savedDraft.bannerUrl) setBannerUrl(savedDraft.bannerUrl);
+    if (savedDraft.primaryColor) setPrimaryColor(savedDraft.primaryColor);
+    if (savedDraft.secondaryColor) setSecondaryColor(savedDraft.secondaryColor);
+    if (savedDraft.backgroundColor) setBackgroundColor(savedDraft.backgroundColor);
+    if (savedDraft.surfaceColor) setSurfaceColor(savedDraft.surfaceColor);
+    if (savedDraft.textColor) setTextColor(savedDraft.textColor);
+    if (savedDraft.accentColor) setAccentColor(savedDraft.accentColor);
+    if (savedDraft.fontFamily) setFontFamily(savedDraft.fontFamily);
+    if (savedDraft.minTeamSize) setMinTeamSize(savedDraft.minTeamSize);
+    if (savedDraft.maxTeamSize) setMaxTeamSize(savedDraft.maxTeamSize);
+    if (savedDraft.allowIndividual !== undefined) setAllowIndividual(savedDraft.allowIndividual);
+    if (savedDraft.requireTeam !== undefined) setRequireTeam(savedDraft.requireTeam);
+    if (savedDraft.isPaid !== undefined) setIsPaid(savedDraft.isPaid);
+    if (savedDraft.feeType) setFeeType(savedDraft.feeType);
+    if (savedDraft.feeAmount) setFeeAmount(savedDraft.feeAmount);
+    if (savedDraft.upiId) setUpiId(savedDraft.upiId);
+    if (savedDraft.payeeName) setPayeeName(savedDraft.payeeName);
+    if (savedDraft.certTemplateMode) setCertTemplateMode(savedDraft.certTemplateMode);
+    if (savedDraft.photoTemplateUrl) setPhotoTemplateUrl(savedDraft.photoTemplateUrl);
+    if (savedDraft.signatory1Name) setSignatory1Name(savedDraft.signatory1Name);
+    if (savedDraft.signatory1Title) setSignatory1Title(savedDraft.signatory1Title);
+    if (savedDraft.signatory2Name) setSignatory2Name(savedDraft.signatory2Name);
+    if (savedDraft.signatory2Title) setSignatory2Title(savedDraft.signatory2Title);
+
+    setSavedDraft(null);
+    setDraftToast('Draft restored successfully! You can now continue editing.');
+    setTimeout(() => setDraftToast(null), 3000);
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraftEvent();
+    setSavedDraft(null);
+  };
+
   const handleCreateSubmit = () => {
     const enforcedBranchId = currentUser.role === 'admin' ? branchId : (currentUser.branchId || branchId);
     const newEvent = createEvent({
@@ -295,34 +475,115 @@ export default function CreateEventWizardPage() {
       },
     });
 
+    clearDraftEvent();
     setCreatedEvent(newEvent);
     setShowSuccessModal(true);
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6" suppressHydrationWarning>
-      <div className="flex items-center justify-between">
+      {/* Resume Saved Draft Alert */}
+      {savedDraft && (
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-stone-900 text-sm">
+                Unfinished Draft Found: &ldquo;{savedDraft.title || 'Untitled Event'}&rdquo;
+              </p>
+              <p className="text-stone-500 text-xs">
+                Saved {savedDraft.savedAt ? new Date(savedDraft.savedAt).toLocaleTimeString() : 'recently'}. Would you like to restore your entered details?
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleResumeDraft}
+              className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer shadow-xs transition-all"
+            >
+              Resume Draft
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="px-3.5 py-2 rounded-xl border border-stone-200 hover:bg-white text-stone-600 font-semibold text-xs cursor-pointer transition-colors"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {draftToast && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600" />
+            <span>{draftToast}</span>
+          </div>
+          <button onClick={() => setDraftToast(null)} className="text-emerald-700 hover:underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Wizard Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <Link
-            href="/organizer/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-1"
+          <button
+            type="button"
+            onClick={() => {
+              if (title.trim()) {
+                setShowExitModal(true);
+              } else {
+                router.push('/organizer/dashboard');
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-1 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Cancel</span>
-          </Link>
+            <span>Back to Dashboard</span>
+          </button>
           <h1 className="text-2xl font-black text-stone-900">Event Creation Wizard</h1>
           <p className="text-xs text-stone-500">
             Configure basic details, dynamic theme, team formation rules, UPI QR payments, and certificate settings.
           </p>
         </div>
 
-        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-          Step {step} of 7
-        </span>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            className="px-3.5 py-2 rounded-xl border border-stone-200 hover:border-emerald-500 hover:bg-emerald-50 text-stone-700 hover:text-emerald-800 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+          >
+            <span>Save Draft</span>
+          </button>
+
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200">
+            Step {step} of 7
+          </span>
+        </div>
+      </div>
+
+      {/* Clear Visual Progress Indicator */}
+      <div className="space-y-1.5 bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+        <div className="flex items-center justify-between text-xs font-bold">
+          <span className="text-stone-700">Creation Progress</span>
+          <span className="text-emerald-700 font-black">{Math.round((step / 7) * 100)}% Completed</span>
+        </div>
+        <div className="w-full bg-stone-100 rounded-full h-2.5 overflow-hidden border border-stone-200">
+          <div
+            className="bg-emerald-600 h-full transition-all duration-300"
+            style={{ width: `${(step / 7) * 100}%` }}
+          />
+        </div>
       </div>
 
       {/* Stepper Tabs */}
-      <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between">
+      <div className="bg-white p-3 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between overflow-x-auto">
         {[
           { num: 1, label: 'Basics' },
           { num: 2, label: 'Theme Studio' },
@@ -334,14 +595,18 @@ export default function CreateEventWizardPage() {
         ].map((s) => (
           <div
             key={s.num}
-            onClick={() => setStep(s.num as any)}
-            className={`flex items-center gap-2 text-xs font-semibold cursor-pointer ${
-              step === s.num ? 'text-emerald-700' : 'text-stone-400 hover:text-stone-700'
+            onClick={() => {
+              if (s.num <= step || validateStep(step)) {
+                setStep(s.num as any);
+              }
+            }}
+            className={`flex items-center gap-2 text-xs font-semibold cursor-pointer shrink-0 px-2 py-1 ${
+              step === s.num ? 'text-emerald-700 font-bold' : 'text-stone-400 hover:text-stone-700'
             }`}
           >
             <span
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${
-                step === s.num ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-600'
+                step === s.num ? 'bg-emerald-600 text-white shadow-xs' : 'bg-stone-100 text-stone-600'
               }`}
             >
               {s.num}
@@ -350,6 +615,53 @@ export default function CreateEventWizardPage() {
           </div>
         ))}
       </div>
+
+      {/* Exit Confirmation Modal */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-stone-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-bold text-stone-900 text-base">Unsaved Changes</h3>
+              <p className="text-xs text-stone-500">
+                You have unsaved changes in the wizard. Would you like to save a draft before leaving?
+              </p>
+            </div>
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleSaveDraft();
+                  setShowExitModal(false);
+                  router.push('/organizer/dashboard');
+                }}
+                className="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs cursor-pointer shadow-sm"
+              >
+                Save Draft &amp; Exit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExitModal(false);
+                  router.push('/organizer/dashboard');
+                }}
+                className="w-full py-2.5 rounded-xl border border-stone-200 text-stone-600 font-semibold text-xs cursor-pointer hover:bg-stone-50"
+              >
+                Discard &amp; Exit
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowExitModal(false)}
+                className="w-full py-2 text-stone-400 text-xs font-semibold hover:text-stone-600 cursor-pointer"
+              >
+                Keep Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Step Form Box */}
       <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-sm space-y-6">
@@ -1469,27 +1781,101 @@ export default function CreateEventWizardPage() {
           </div>
         )}
 
-        {/* STEP 7: REVIEW & PUBLISH */}
+        {/* STEP 7: REVIEW & PUBLISH WITH LIVE STUDENT CARD PREVIEW */}
         {step === 7 && (
-          <div className="space-y-5">
-            <h3 className="text-base font-bold text-stone-900">7. Review Event Details &amp; Publish</h3>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-bold text-stone-900">7. Live Preview &amp; Final Review</h3>
+              <p className="text-xs text-stone-500">
+                Inspect how your event will appear to students on the public campus portal before publishing.
+              </p>
+            </div>
 
+            {/* LIVE PREVIEW CONTAINER */}
+            <div className="bg-stone-50 rounded-3xl p-5 border border-stone-200 space-y-4">
+              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                Live Student-Facing Event Card Preview
+              </span>
+
+              {/* Student Card Mockup */}
+              <div className="max-w-md mx-auto bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-lg flex flex-col">
+                <div className="relative aspect-[16/9] w-full bg-stone-950 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={bannerUrl || '/images/theme-tech.jpg'}
+                    alt="Event Poster Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold shadow backdrop-blur-md"
+                      style={{
+                        backgroundColor: primaryColor,
+                        color: textColor,
+                      }}
+                    >
+                      Theme: {themeName}
+                    </span>
+                  </div>
+
+                  <div className="absolute top-3 left-3 flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow">
+                      {category}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-stone-900/80 text-stone-200 border border-stone-700">
+                      {branchId.replace('branch-', '').toUpperCase()}
+                    </span>
+                  </div>
+
+                  <span className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/95 text-stone-900 shadow">
+                    {isPaid ? `₹${feeAmount} ${feeType === 'per_team' ? '/ team' : '/ person'}` : 'Free Entry'}
+                  </span>
+                </div>
+
+                <div className="p-5 space-y-3">
+                  <h4 className="text-base font-bold text-stone-900">{title || `${themeName} Challenge`}</h4>
+                  <p className="text-xs text-stone-500 line-clamp-2">
+                    {tagline || `Join us for an exciting ${themeName} themed competition!`}
+                  </p>
+
+                  <div className="space-y-1.5 pt-2 border-t border-stone-100 text-xs text-stone-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span suppressHydrationWarning>{formatDate(startDate)} - {formatDate(endDate)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Team Size: {minTeamSize} to {maxTeamSize} members</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Details Table */}
             <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3 text-xs">
               <div className="flex justify-between border-b border-stone-200 pb-2">
                 <span className="font-semibold text-stone-500">Event Title:</span>
                 <span className="font-bold text-stone-900">{title || `${themeName} Challenge`}</span>
               </div>
               <div className="flex justify-between border-b border-stone-200 pb-2">
-                <span className="font-semibold text-stone-500">Theme:</span>
-                <span className="font-bold text-emerald-700">{themeName}</span>
+                <span className="font-semibold text-stone-500">Organizing Department:</span>
+                <span className="font-bold">{branchId.replace('branch-', '').toUpperCase()}</span>
               </div>
               <div className="flex justify-between border-b border-stone-200 pb-2">
-                <span className="font-semibold text-stone-500">Team Size:</span>
-                <span className="font-bold">{minTeamSize} to {maxTeamSize} Members</span>
+                <span className="font-semibold text-stone-500">Theme &amp; Font:</span>
+                <span className="font-bold text-emerald-700">{themeName} ({fontFamily})</span>
               </div>
               <div className="flex justify-between border-b border-stone-200 pb-2">
-                <span className="font-semibold text-stone-500">Entry Fee:</span>
-                <span className="font-bold">{isPaid ? `₹${feeAmount} (${feeType})` : 'Free Entry'}</span>
+                <span className="font-semibold text-stone-500">Team Size Quota:</span>
+                <span className="font-bold">{minTeamSize} to {maxTeamSize} Members • Max {capacity} Spots</span>
+              </div>
+              <div className="flex justify-between border-b border-stone-200 pb-2">
+                <span className="font-semibold text-stone-500">Registration Fee:</span>
+                <span className="font-bold">{isPaid ? `₹${feeAmount} (${feeType}) via ${upiId}` : 'Free Entry'}</span>
               </div>
               <div className="flex justify-between border-b border-stone-200 pb-2">
                 <span className="font-semibold text-stone-500">Certificate Format:</span>
@@ -1502,46 +1888,86 @@ export default function CreateEventWizardPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="font-semibold text-stone-500">Signatories:</span>
+                <span className="font-semibold text-stone-500">Faculty Signatories:</span>
                 <span>{signatory1Name} &amp; {signatory2Name}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-          {step > 1 ? (
-            <button
-              type="button"
-              onClick={() => setStep((step - 1) as any)}
-              className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold hover:bg-stone-50 transition-colors cursor-pointer"
-            >
-              Back
-            </button>
-          ) : (
-            <div />
-          )}
+        {/* Inline Step Validation Error */}
+        {stepError && (
+          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <span>{stepError}</span>
+          </div>
+        )}
 
-          {step < 7 ? (
+        {/* Navigation Buttons: Previous, Save Draft, Continue */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100">
+          <div className="flex items-center gap-2">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setStepError(null);
+                  setStep((step - 1) as any);
+                }}
+                className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold hover:bg-stone-50 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Previous</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (title.trim()) {
+                    setShowExitModal(true);
+                  } else {
+                    router.push('/organizer/dashboard');
+                  }
+                }}
+                className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold hover:bg-stone-50 transition-colors cursor-pointer text-stone-500"
+              >
+                Cancel
+              </button>
+            )}
+
             <button
               type="button"
-              onClick={() => setStep((step + 1) as any)}
-              className="px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              onClick={handleSaveDraft}
+              className="px-4 py-2 rounded-xl border border-stone-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-stone-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <span>Next Step</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Save Draft</span>
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleCreateSubmit}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Publish Themed Event Now</span>
-            </button>
-          )}
+          </div>
+
+          <div>
+            {step < 7 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (validateStep(step)) {
+                    setStep((step + 1) as any);
+                  }
+                }}
+                className="px-6 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+              >
+                <span>Continue</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCreateSubmit}
+                className="px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Publish Themed Event Now</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

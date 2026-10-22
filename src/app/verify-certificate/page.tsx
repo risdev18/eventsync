@@ -10,6 +10,7 @@ import { ShieldCheck, Search, Award, CheckCircle2, AlertTriangle, ArrowRight } f
 import Link from 'next/link';
 
 import { Certificate } from '@/lib/types';
+import { formatDate } from '@/lib/utils/dateFormat';
 
 export default function PublicVerifyCertificatePage() {
   const { certificates } = useStore();
@@ -167,7 +168,7 @@ export default function PublicVerifyCertificatePage() {
 
                   <div className="flex justify-between">
                     <span className="text-stone-500">Issued On:</span>
-                    <span>{new Date(searchedCert.issueDate).toLocaleDateString()}</span>
+                    <span suppressHydrationWarning>{formatDate(searchedCert.issueDate)}</span>
                   </div>
                 </div>
 

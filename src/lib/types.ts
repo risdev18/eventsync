@@ -108,7 +108,7 @@ export type EventStatus =
   | 'completed'
   | 'cancelled';
 
-export type EventCategory = 'hackathon' | 'workshop' | 'competition' | 'cultural' | 'technical';
+export type EventCategory = 'hackathon' | 'workshop' | 'competition' | 'cultural' | 'technical' | 'seminar';
 
 export interface EventScheduleItem {
   time: string;

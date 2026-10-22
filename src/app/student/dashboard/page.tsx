@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Users,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
 
 export default function StudentDashboardPage() {
   const { currentUser, registrations, events, certificates, tickets } = useStore();
@@ -176,9 +177,9 @@ export default function StudentDashboardPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500 mt-1">
-                        <span className="flex items-center gap-1">
+                        <span suppressHydrationWarning className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
-                          {new Date(event.startDate).toLocaleDateString()}
+                          {formatDate(event.startDate)}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
@@ -283,7 +284,9 @@ export default function StudentDashboardPage() {
                 </div>
 
                 <div className="pt-2 flex items-center justify-between text-xs border-t border-stone-100">
-                  <span className="text-stone-500">{new Date(evt.startDate).toLocaleDateString()}</span>
+                  <span suppressHydrationWarning className="text-stone-500">
+                    {formatDate(evt.startDate)}
+                  </span>
                   <Link
                     href={`/events/${evt.id}`}
                     className="font-bold text-emerald-600 hover:text-emerald-700"

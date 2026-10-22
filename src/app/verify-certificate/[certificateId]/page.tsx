@@ -8,6 +8,7 @@ import { DemoRoleSwitcher } from '@/components/layout/DemoRoleSwitcher';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ShieldCheck, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
 
 export default function DirectCertificateVerificationPage() {
   const params = useParams();
@@ -84,7 +85,7 @@ export default function DirectCertificateVerificationPage() {
 
               <div className="flex justify-between">
                 <span className="text-stone-500 font-medium">Date of Issue:</span>
-                <span>{new Date(cert.issueDate).toLocaleDateString()}</span>
+                <span suppressHydrationWarning>{formatDate(cert.issueDate)}</span>
               </div>
             </div>
 

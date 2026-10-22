@@ -199,6 +199,38 @@ export function useStore() {
       const regId = `reg-${Date.now()}`;
       const now = new Date().toISOString();
       const event = state.events.find((e) => e.id === data.eventId);
+      if (!event) {
+        throw new Error('Event not found.');
+      }
+
+      // 1. Registration deadline check
+      if (new Date() > new Date(event.registrationDeadline)) {
+        throw new Error(`Registration deadline passed on ${new Date(event.registrationDeadline).toLocaleDateString()}.`);
+      }
+
+      // 2. Capacity enforcement
+      if (event.registeredCount >= event.capacity) {
+        throw new Error(`Event is at full capacity (${event.capacity} seats). Registrations are closed.`);
+      }
+
+      // 3. Duplicate registration check for current student and team member emails
+      const incomingEmails = new Set(data.members.map((m) => m.email.toLowerCase().trim()));
+      if (currentUser.email) {
+        incomingEmails.add(currentUser.email.toLowerCase().trim());
+      }
+
+      const activeEventRegs = state.registrations.filter(
+        (r) => r.eventId === data.eventId && r.status !== 'cancelled' && r.status !== 'rejected'
+      );
+
+      const hasDuplicate = activeEventRegs.some((r) => {
+        if (r.userId === currentUser.id) return true;
+        return r.members.some((m) => incomingEmails.has(m.email.toLowerCase().trim()));
+      });
+
+      if (hasDuplicate) {
+        throw new Error('You or one of your team members is already registered for this event.');
+      }
 
       const teamMembers: TeamMember[] = data.members.map((m, idx) => ({
         ...m,
@@ -302,8 +334,131 @@ export function useStore() {
 
       return { registration: newRegistration, payment: newPayment };
     },
-    [currentUser, state.events, updateState]
+    [currentUser, state.events, state.registrations, updateState]
   );
+
+  // Student Registration Cancellation
+  const cancelRegistration = useCallback(
+    (registrationId: string, reason?: string) => {
+      updateState((prev) => {
+        const reg = prev.registrations.find((r) => r.id === registrationId);
+        if (!reg) return prev;
+
+        const event = prev.events.find((e) => e.id === reg.eventId);
+        const now = new Date().toISOString();
+
+        const updatedRegs = prev.registrations.map((r) =>
+          r.id === registrationId ? { ...r, status: 'cancelled' as const } : r
+        );
+
+        // Decrement registered count on the event
+        const updatedEvents = prev.events.map((e) =>
+          e.id === reg.eventId ? { ...e, registeredCount: Math.max(0, e.registeredCount - 1) } : e
+        );
+
+        // Remove or invalidate active tickets
+        const updatedTickets = prev.tickets.filter((t) => t.registrationId !== registrationId);
+
+        const newNotification: InAppNotification = {
+          id: `notif-${Date.now()}`,
+          userId: reg.userId,
+          title: 'Registration Cancelled ❌',
+          message: `Your registration for "${event?.title || 'Event'}" has been cancelled successfully.${
+            reason ? ` Note: ${reason}` : ''
+          }`,
+          type: 'info',
+          link: '/student/registrations',
+          eventId: reg.eventId,
+          read: false,
+          createdAt: now,
+        };
+
+        const newLog: AuditLog = {
+          id: `log-${Date.now()}`,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userRole: currentUser.role,
+          action: 'REGISTRATION_CANCELLED',
+          details: `Cancelled registration ${registrationId} for event "${event?.title || reg.eventId}"`,
+          timestamp: now,
+        };
+
+        return {
+          ...prev,
+          registrations: updatedRegs,
+          events: updatedEvents,
+          tickets: updatedTickets,
+          notifications: [newNotification, ...prev.notifications],
+          auditLogs: [newLog, ...prev.auditLogs],
+        };
+      });
+      return { success: true, message: 'Registration cancelled successfully.' };
+    },
+    [currentUser, updateState]
+  );
+
+  // Bookmark Helpers (Local Storage Sync)
+  const getBookmarks = useCallback((): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('eventease_bookmarks');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const toggleBookmark = useCallback((eventId: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem('eventease_bookmarks');
+      const list: string[] = raw ? JSON.parse(raw) : [];
+      let nextList: string[];
+      let isSaved = false;
+      if (list.includes(eventId)) {
+        nextList = list.filter((id) => id !== eventId);
+        isSaved = false;
+      } else {
+        nextList = [...list, eventId];
+        isSaved = true;
+      }
+      localStorage.setItem('eventease_bookmarks', JSON.stringify(nextList));
+      window.dispatchEvent(new CustomEvent('eventease_bookmarks_updated', { detail: nextList }));
+      return isSaved;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Event Creation Wizard Draft Helpers
+  const saveDraftEvent = useCallback((draftData: any) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('eventease_event_wizard_draft', JSON.stringify({
+        ...draftData,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.error('Failed to save wizard draft:', e);
+    }
+  }, []);
+
+  const loadDraftEvent = useCallback((): any | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('eventease_event_wizard_draft');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const clearDraftEvent = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem('eventease_event_wizard_draft');
+    } catch {}
+  }, []);
 
   // Payment Verification
   const verifyPayment = useCallback(
@@ -887,6 +1042,158 @@ export function useStore() {
     [currentUser, state.registrations, updateState, verifySecurityPassword]
   );
 
+  const resetStudentRegistrations = useCallback(() => {
+    updateState((prev) => {
+      const email = currentUser.email.toLowerCase();
+      const updatedRegs = prev.registrations.filter(
+        (r) => r.userId !== currentUser.id && !r.members.some((m) => m.email.toLowerCase() === email)
+      );
+      const updatedTickets = prev.tickets.filter(
+        (t) => t.userId !== currentUser.id && t.participantEmail.toLowerCase() !== email
+      );
+      const updatedPayments = prev.payments.filter((p) => p.userId !== currentUser.id);
+
+      return {
+        ...prev,
+        registrations: updatedRegs,
+        tickets: updatedTickets,
+        payments: updatedPayments,
+      };
+    });
+    return { success: true, message: 'All demo registrations cleared. Ready for fresh registration demo!' };
+  }, [currentUser, updateState]);
+
+  // Student Self-Registration Portal
+  const registerStudent = useCallback(
+    (data: {
+      name: string;
+      email: string;
+      usn: string;
+      branchId: string;
+      year?: string;
+      phone?: string;
+      college?: string;
+      interests?: string[];
+      avatarUrl?: string;
+      securityPassword?: string;
+    }) => {
+      const now = new Date().toISOString();
+      const newId = `user-student-${Date.now()}`;
+      const newStudent: UserProfile = {
+        id: newId,
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        role: 'student',
+        usn: data.usn.trim().toUpperCase(),
+        branchId: data.branchId,
+        year: data.year || '1st Year',
+        phone: data.phone?.trim() || '+91 98765 00000',
+        college: data.college?.trim() || 'College of Engineering & Technology',
+        interests: data.interests || ['Hackathons', 'Workshops'],
+        avatarUrl:
+          data.avatarUrl ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        securityPassword: data.securityPassword?.trim() || 'student2026',
+      };
+
+      const welcomeNotif: InAppNotification = {
+        id: `notif-${Date.now()}`,
+        userId: newId,
+        title: 'Registration Successful! 🎓',
+        message: `Welcome to EventEase, ${newStudent.name}! Your student profile has been registered for ${newStudent.college}.`,
+        type: 'success',
+        link: '/student/profile',
+        read: false,
+        createdAt: now,
+      };
+
+      const audit: AuditLog = {
+        id: `log-${Date.now()}`,
+        userId: newId,
+        userName: newStudent.name,
+        userRole: 'student',
+        action: 'STUDENT_REGISTERED',
+        details: `Student ${newStudent.name} (${newStudent.usn}) registered in department ${newStudent.branchId}`,
+        timestamp: now,
+      };
+
+      updateState((prev) => ({
+        ...prev,
+        currentUserId: newId,
+        users: [...prev.users, newStudent],
+        notifications: [welcomeNotif, ...prev.notifications],
+        auditLogs: [audit, ...prev.auditLogs],
+      }));
+
+      return newStudent;
+    },
+    [updateState]
+  );
+
+  // Dynamic Academic Branch Creation
+  const addBranch = useCallback(
+    (branchData: {
+      name: string;
+      code: string;
+      description?: string;
+      iconName?: string;
+      accentColor?: string;
+      coordinatorName?: string;
+      coordinatorEmail?: string;
+    }) => {
+      const cleanCode = branchData.code.trim().toUpperCase();
+      const branchId = `branch-${cleanCode.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
+      const newBranch: Branch = {
+        id: branchId,
+        name: branchData.name.trim(),
+        code: cleanCode,
+        description: branchData.description?.trim() || `${branchData.name.trim()} Department`,
+        iconName: branchData.iconName || 'Layers',
+        accentColor: branchData.accentColor || '#059669',
+        coordinatorName: branchData.coordinatorName?.trim() || 'Department Faculty Head',
+        coordinatorEmail:
+          branchData.coordinatorEmail?.trim() || `coordinator.${cleanCode.toLowerCase()}@college.edu`,
+        active: true,
+        eventCount: 0,
+      };
+
+      const audit: AuditLog = {
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userRole: currentUser.role,
+        action: 'BRANCH_ADDED',
+        details: `Created new academic branch "${newBranch.name}" (${newBranch.code})`,
+        timestamp: new Date().toISOString(),
+      };
+
+      updateState((prev) => {
+        if (prev.branches.some((b) => b.id === branchId || b.code === cleanCode)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          branches: [...prev.branches, newBranch],
+          auditLogs: [audit, ...prev.auditLogs],
+        };
+      });
+
+      return newBranch;
+    },
+    [currentUser, updateState]
+  );
+
+  const updateStudentProfile = useCallback(
+    (userId: string, updates: Partial<UserProfile>) => {
+      updateState((prev) => ({
+        ...prev,
+        users: prev.users.map((u) => (u.id === userId ? { ...u, ...updates } : u)),
+      }));
+    },
+    [updateState]
+  );
+
   return {
     isHydrated,
     currentUser,
@@ -912,6 +1219,16 @@ export function useStore() {
     updateEventTheme,
     updateEventStatus,
     createRegistration,
+    cancelRegistration,
+    resetStudentRegistrations,
+    registerStudent,
+    addBranch,
+    updateStudentProfile,
+    getBookmarks,
+    toggleBookmark,
+    saveDraftEvent,
+    loadDraftEvent,
+    clearDraftEvent,
     verifyPayment,
     rejectPayment,
     checkInTicket,

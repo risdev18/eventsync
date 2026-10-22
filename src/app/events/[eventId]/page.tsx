@@ -19,7 +19,10 @@ import {
   CheckCircle2,
   Sparkles,
   FileText,
+  Eye,
 } from 'lucide-react';
+import { formatDate } from '@/lib/utils/dateFormat';
+import { SampleCertificateModal } from '@/components/certificates/SampleCertificateModal';
 
 export default function ThemedEventPage() {
   const params = useParams();
@@ -27,6 +30,7 @@ export default function ThemedEventPage() {
   const eventId = params.eventId as string;
   const { events } = useStore();
   const [activeTab, setActiveTab] = useState<'about' | 'rules' | 'prizes' | 'schedule' | 'faq'>('about');
+  const [showSampleCert, setShowSampleCert] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -160,9 +164,8 @@ export default function ThemedEventPage() {
                   <div className="flex flex-wrap items-center gap-4 pt-2 text-xs sm:text-sm font-medium">
                     <div className="flex items-center gap-1.5 opacity-90">
                       <Calendar className="w-4 h-4" style={{ color: theme.primaryColor }} />
-                      <span>
-                        {new Date(event.startDate).toLocaleDateString()} -{' '}
-                        {new Date(event.endDate).toLocaleDateString()}
+                      <span suppressHydrationWarning>
+                        {formatDate(event.startDate)} - {formatDate(event.endDate)}
                       </span>
                     </div>
 
@@ -175,6 +178,16 @@ export default function ThemedEventPage() {
                       <Users className="w-4 h-4" style={{ color: theme.primaryColor }} />
                       <span>{event.capacity - event.registeredCount} spots remaining</span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowSampleCert(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/25 transition-all cursor-pointer backdrop-blur-md shadow-sm"
+                      style={{ color: theme.textColor }}
+                    >
+                      <Award className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Preview Sample Certificate</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -232,8 +245,8 @@ export default function ThemedEventPage() {
               </div>
               <div>
                 <p className="text-xs opacity-70">Registration Deadline</p>
-                <p className="text-sm font-bold">
-                  {new Date(event.registrationDeadline).toLocaleDateString()}
+                <p suppressHydrationWarning className="text-sm font-bold">
+                  {formatDate(event.registrationDeadline)}
                 </p>
               </div>
             </div>
@@ -486,6 +499,25 @@ export default function ThemedEventPage() {
                 Register Now →
               </Link>
 
+              {/* Sample Certificate Sidebar Card */}
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-amber-300">
+                  <Award className="w-4 h-4" />
+                  <span>Official Certificate Included</span>
+                </div>
+                <p className="opacity-75 text-[11px] leading-relaxed">
+                  Verified attendees receive a cryptographically signed certificate matching the {theme.themeName} theme.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowSampleCert(true)}
+                  className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Preview Sample Certificate</span>
+                </button>
+              </div>
+
               <div className="pt-2 text-center text-xs opacity-60">
                 Organizer: {event.organizerName} <br />
                 {event.organizerContact}
@@ -493,6 +525,13 @@ export default function ThemedEventPage() {
             </div>
           </div>
         </section>
+
+        {/* Sample Certificate Modal */}
+        <SampleCertificateModal
+          event={event}
+          isOpen={showSampleCert}
+          onClose={() => setShowSampleCert(false)}
+        />
       </ThemedContainer>
     </div>
   );
