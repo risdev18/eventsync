@@ -27,7 +27,7 @@ import {
   INITIAL_AUDIT_LOGS,
 } from './initialData';
 
-const STORAGE_KEY = 'eventease_v2_fresh_demo';
+const STORAGE_KEY = 'eventsync_v3_authority';
 
 export interface AppState {
   currentUserId: string;
@@ -166,13 +166,39 @@ export function loadState(): AppState {
         ? parsed.collegeName
         : 'College of Engineering & Technology';
 
+    const sanitizedEvents = mergedEvents.map((e: CollegeEvent) => {
+      const cur = e.certificateSettings?.collegeName;
+      if (!cur || cur.startsWith('EventEase')) {
+        return {
+          ...e,
+          certificateSettings: {
+            ...e.certificateSettings,
+            collegeName: effectiveCollegeName,
+          },
+        };
+      }
+      return e;
+    });
+
+    const rawCerts = Array.isArray(parsed.certificates) ? parsed.certificates : INITIAL_CERTIFICATES;
+    const sanitizedCerts = rawCerts.map((c: Certificate) => {
+      if (!c.collegeName || c.collegeName.startsWith('EventEase')) {
+        return {
+          ...c,
+          collegeName: effectiveCollegeName,
+        };
+      }
+      return c;
+    });
+
     inMemoryState = {
       ...getDefaultState(),
       ...parsed,
       collegeName: effectiveCollegeName,
       users: mergedUsers,
       branches: mergedBranches,
-      events: mergedEvents,
+      events: sanitizedEvents,
+      certificates: sanitizedCerts,
       registrations: cleanRegistrations,
       tickets: cleanTickets,
       payments: cleanPayments,
