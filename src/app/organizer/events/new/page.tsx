@@ -36,6 +36,14 @@ import {
   compileCertificateTemplate,
 } from '@/lib/certificates/chatGptTemplates';
 
+function getFutureDateTime(daysAhead: number, hours: number, minutes: number = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  d.setHours(hours, minutes, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function CreateEventWizardPage() {
   const router = useRouter();
   const {
@@ -64,9 +72,9 @@ export default function CreateEventWizardPage() {
   const [venue, setVenue] = useState('Auditorium, Main Block');
   const [mode, setMode] = useState<'offline' | 'online' | 'hybrid'>('offline');
   const [capacity, setCapacity] = useState(100);
-  const [startDate, setStartDate] = useState('2026-05-10T09:00');
-  const [endDate, setEndDate] = useState('2026-05-12T18:00');
-  const [registrationDeadline, setRegistrationDeadline] = useState('2026-05-09T23:59');
+  const [startDate, setStartDate] = useState(() => getFutureDateTime(10, 9, 0));
+  const [endDate, setEndDate] = useState(() => getFutureDateTime(12, 18, 0));
+  const [registrationDeadline, setRegistrationDeadline] = useState(() => getFutureDateTime(7, 23, 59));
 
   // Check for saved draft on mount
   React.useEffect(() => {

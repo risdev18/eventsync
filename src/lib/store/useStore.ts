@@ -947,6 +947,8 @@ export function useStore() {
           ? 'it2026'
           : targetUser?.branchId === 'branch-aml'
           ? 'aml2026'
+          : targetUser?.branchId === 'branch-cs'
+          ? 'cs2026'
           : targetUser?.role === 'admin'
           ? 'admin2026'
           : 'student2026');

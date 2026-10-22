@@ -116,6 +116,8 @@ export function loadState(): AppState {
               ? 'it2026'
               : mergedUsers[idx].branchId === 'branch-aml'
               ? 'aml2026'
+              : mergedUsers[idx].branchId === 'branch-cs'
+              ? 'cs2026'
               : mergedUsers[idx].role === 'admin'
               ? 'admin2026'
               : 'student2026'),
@@ -166,18 +168,32 @@ export function loadState(): AppState {
         ? parsed.collegeName
         : 'College of Engineering & Technology';
 
+    const nowMs = Date.now();
     const sanitizedEvents = mergedEvents.map((e: CollegeEvent) => {
       const cur = e.certificateSettings?.collegeName;
+      let evt = e;
       if (!cur || cur.startsWith('EventEase')) {
-        return {
-          ...e,
+        evt = {
+          ...evt,
           certificateSettings: {
-            ...e.certificateSettings,
+            ...evt.certificateSettings,
             collegeName: effectiveCollegeName,
           },
         };
       }
-      return e;
+
+      // Automatically renew deadlines if expired so presentation and live demo never fail
+      const deadlineMs = new Date(evt.registrationDeadline).getTime();
+      if (isNaN(deadlineMs) || deadlineMs < nowMs) {
+        evt = {
+          ...evt,
+          registrationDeadline: new Date(nowMs + 14 * 86400000).toISOString(),
+          startDate: new Date(nowMs + 16 * 86400000).toISOString(),
+          endDate: new Date(nowMs + 18 * 86400000).toISOString(),
+        };
+      }
+
+      return evt;
     });
 
     const rawCerts = Array.isArray(parsed.certificates) ? parsed.certificates : INITIAL_CERTIFICATES;

@@ -9,7 +9,7 @@ import { OrganizerSidebar } from '@/components/layout/OrganizerSidebar';
 import { ShieldAlert, GraduationCap, Lock, Sparkles } from 'lucide-react';
 
 export default function OrganizerLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, switchUser } = useStore();
+  const { currentUser, switchUser, users } = useStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,10 @@ export default function OrganizerLayout({ children }: { children: React.ReactNod
             <div className="space-y-2 pt-2">
               <button
                 type="button"
-                onClick={() => switchUser('user-organizer-cs')}
+                onClick={() => {
+                  const target = users.find((u) => u.id === 'user-organizer-cs') || users.find((u) => u.role === 'organizer');
+                  switchUser(target?.id || 'user-organizer-cs');
+                }}
                 className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
